@@ -37,7 +37,7 @@
     <arg name="with_coredump" value="--with-coredump" if="$(arg coredump)"/>
     <arg name="with_coredump" value="" unless="$(arg coredump)"/>
     <arg name="with_ik" default="true"/>
-    <arg name="with_mm_ik" default="false"/>
+    <arg name="with_mm_ik" default="true"/>
 
     <!-- teach_pendant -->
     <arg name="teach_pendant" default="0"/>
@@ -76,6 +76,12 @@
     <param name="/mpc/schedule/enable" value="false"/>
     <param name="/mpc/schedule/start_time" value="-1.0"/>
     <param name="/timeout_warning_ms" value="20"/>
+
+    <!-- 自动清理 .ros 文件夹参数 -->
+    <!-- 最大日志大小为 64GB，日志大小大于 64GB 时删除日志 -->
+    <param name="/nodelet_manager/max_log_size_gb" value="64.0"/>
+    <!-- 删除日志到大小为 60GB 时停止删除日志 -->
+    <param name="/nodelet_manager/log_delete_limit_gb" value="60.0"/>
 
     <!-- mpc node -->
     <group if="$(arg use_external_mpc)">

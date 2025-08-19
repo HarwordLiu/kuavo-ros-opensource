@@ -33,6 +33,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Add debug information
+add_compile_options(-g)
+
 # Generate compile_commands.json for tooling
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -52,7 +55,6 @@ endif()
 # Source Files
 # ==============================================================================
 set(SRC_OBJECTS
-    src/common/common.cpp
     src/kuavo_common.cpp
     src/common/kuavo_settings.cpp
     src/common/utils.cpp

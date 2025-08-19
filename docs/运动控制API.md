@@ -85,9 +85,17 @@
   
   - 该服务用于查询是否有手势正在执行
 
+**`/dexhand/change_force_level`**
+
+先决条件:只有在`kuavo.json`中配置`EndEffectorType`为`qiangnao`或者`qiangnao_touch`时才会存在此服务.
+
+服务描述: 该服务修改灵巧手的抓力程度
+
+消息类型: `kuavo_msgs/handForceLevel`
+
 **`/control_robot_leju_claw`**
 
-先决条件:只有在`kuavo.json`中配置`EndEffectorType`为`lejuclaw`时才会发布该话题.
+先决条件:只有在`kuavo.json`中配置`EndEffectorType`为`lejuclaw`时才会存在此服务.
 
 服务描述: 该服务用于控制二指夹爪
 
@@ -352,6 +360,16 @@
 
 - 注意: 发布的模板要和gait.info中定义的gait严格一致
 
+#### /humanoid_mpc_gait_change
+
+话题描述: 用于切换gait指令
+
+消息类型: `std_msgs/String`
+  
+  - 描述：输入步态名字即可，例如：'walk','stance'
+
+- **注意：** 该话题是在`/humanoid_mpc_mode_schedule`的基础上进行封装给用户使用的，为保证安全仅支持`walk`和`stance`切换
+
 #### /humanoid_mpc_stop_step_num
 
 话题描述: 停止步数，从当前统计的步数开始，机器人会在后续第N步自动停下
@@ -388,9 +406,9 @@
 
 #### `/dexhand/command`
 
-先决条件:只有在`kuavo.json`中配置`EndEffectorType`为`qiangnao_touch`时才可以使用该话题.
+先决条件:只有在`kuavo.json`中配置`EndEffectorType`为`qiangnao`或者`qiangnao_touch`时才可以使用该话题.
 
-话题描述: 该话题用于控制触觉灵巧手，**双手**.
+话题描述: 该话题用于控制灵巧手，**双手**.
 
 消息类型: `kuavo_msgs/dexhandCommand`
 
@@ -406,9 +424,9 @@
 
 #### `/dexhand/left/command`
 
-先决条件:只有在`kuavo.json`中配置`EndEffectorType`为`qiangnao_touch`时才可以使用该话题.
+先决条件:只有在`kuavo.json`中配置`EndEffectorType`为`qiangnao`或者`qiangnao_touch`时才可以使用该话题.
 
-话题描述: 该话题用于单独控制**左**触觉灵巧手.
+话题描述: 该话题用于单独控制**左**灵巧手.
 
 消息类型: `kuavo_msgs/dexhandCommand`
 
@@ -423,9 +441,9 @@
 
 #### `/dexhand/right/command`
 
-先决条件:只有在`kuavo.json`中配置`EndEffectorType`为`qiangnao_touch`时才可以使用该话题.
+先决条件:只有在`kuavo.json`中配置`EndEffectorType`为`qiangnao`或者`qiangnao_touch`时才可以使用该话题.
 
-话题描述: 该话题用于单独控制**右**触觉灵巧手.
+话题描述: 该话题用于单独控制**右**灵巧手.
 
 消息类型: `kuavo_msgs/dexhandCommand`
 

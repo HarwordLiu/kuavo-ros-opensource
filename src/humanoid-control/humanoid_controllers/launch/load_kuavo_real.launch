@@ -34,9 +34,9 @@
     <arg name="arm_move_spd"      default="1.2"/>
 
     <!-- 半身控制手臂模式切换插值相关参数 -->
-    <arg name="arm_move_spd_half_up_body" default="0.21"/>
+    <arg name="arm_move_spd_half_up_body" default="0.14"/>
     <arg name="threshold_arm_diff_half_up_body" default="0.28"/>
-
+    
     <!-- The file defining gait definition -->
 
     <!-- Set with_coredump parameter based on coredump value -->
@@ -44,8 +44,7 @@
     <arg name="with_coredump" value="--with-coredump" if="$(arg coredump)"/>
     <arg name="with_coredump" value="" unless="$(arg coredump)"/>
     <arg name="with_ik" default="true"/>
-    <arg name="with_mm_ik" default="false"/>
-    <arg name="with_led" default="true"/>
+    <arg name="with_mm_ik" default="true"/>
     
     <!-- -->
     <arg name="teach_pendant" default="0"/>
@@ -91,6 +90,12 @@
     <param name="/mpc/schedule/start_time" value="-1.0"/>
     <param name="/timeout_warning_ms" value="20"/>
 
+    <!-- 自动清理 .ros 文件夹参数 -->
+    <!-- 最大日志大小为 64GB，日志大小大于 64GB 时删除日志 -->
+    <param name="/nodelet_manager/max_log_size_gb" value="64.0"/>
+    <!-- 删除日志到大小为 60GB 时停止删除日志 -->
+    <param name="/nodelet_manager/log_delete_limit_gb" value="60.0"/>
+
     <group if="$(eval arg('teach_pendant') == 1)">
       <param name="stand_up_protect" value="false"/>
       <param name="only_half_up_body" value="true"/>
@@ -119,7 +124,7 @@
     <arg name="cali" default="false" />
     <arg name="cali_arm" default="false" />
     <arg name="cali_leg" default="false" />
-    <arg name="joint_protect_enable" default="true" />
+    <arg name="joint_protect_enable" default="false" />
     <arg name="cmd_truncation_enable" default="false" />
 
     <param name="real" value="$(arg real)" />
@@ -137,6 +142,9 @@
 
     <param name="hardware/is_ready" value="0"/>
     <node pkg="nodelet" type="nodelet" name="nodelet_controller" args="load HumanoidControllerNodelet nodelet_manager" respawn="false" output="screen" required="true" />
+    <node pkg="nodelet" type="nodelet" name="ekf_se" args="load RobotLocalization/EkfNodelet nodelet_manager" respawn="false" output="screen" required="true" launch-prefix="taskset -c 18">
+      <rosparam command="load" file="$(find humanoid_estimation)/params/ekf_template.yaml" />
+    </node>    
     <group unless="$(arg ruiwo_cxx_sdk)">
       <node pkg="nodelet" type="nodelet" name="nodelet_hardware" args="load HardwareNodelet nodelet_manager" respawn="false" output="screen" required="true"  />
     </group>
@@ -144,10 +152,6 @@
       <node pkg="nodelet" type="nodelet" name="nodelet_hardware" args="load HardwareNodeletCXX nodelet_manager" respawn="false" output="screen" required="true"  />
     </group>
 
-    <node pkg="nodelet" type="nodelet" name="ekf_se" args="load RobotLocalization/EkfNodelet nodelet_manager" respawn="false" output="screen" required="true" launch-prefix="taskset -c 18">
-      <rosparam command="load" file="$(find humanoid_estimation)/params/ekf_template.yaml" />
-    </node>
-    
     <include file="$(find humanoid_interface)/launch/rosbag_nodelet.launch"/>
     <group if="$(arg use_joystick)">
       <group if="$(eval arg('joystick_type') == 'h12')">
@@ -198,6 +202,9 @@
     <node pkg="humanoid_controllers" type="system_info_publisher.py" name="system_info_publisher" />
     <!-- monitor node -->
     <node pkg="kuavo_monitor" type="kuavo_monitor_node" name="kuavo_monitor_node" launch-prefix="$(find humanoid_controllers)/scripts/start_node.sh $(arg with_coredump)"/>
+
+    <!-- 启动上位机服务节点 -->
+    <node pkg="humanoid_controllers" type="upper_computer_service.py" name="upper_computer_service" output="screen" />
 
     <group if="$(arg vr_remote_control)">
       <include file="$(find noitom_hi5_hand_udp_python)/launch/launch_quest3_ik.launch"/>

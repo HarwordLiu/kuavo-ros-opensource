@@ -445,6 +445,9 @@ class KuavoRobotCore:
         
         return self._control.control_robot_end_effector_pose(left_pose, right_pose, frame)
 
+    def control_hand_wrench(self, left_wrench: list, right_wrench: list) -> bool:
+        return self._control.control_hand_wrench(left_wrench, right_wrench)
+    
     def change_manipulation_mpc_frame(self, frame: KuavoManipulationMpcFrame)->bool:
         timeout = 1.0
         count = 0
@@ -576,6 +579,11 @@ class KuavoRobotCore:
     def arm_fk(self, q: list) -> Tuple[KuavoPose, KuavoPose]:
         return self._control.arm_fk(q)
     
+    """ ------------------------------------------------------------------------"""
+    """ Base Pitch Limit Control """
+    def enable_base_pitch_limit(self, enable: bool) -> Tuple[bool, str]:
+        return self._control.enable_base_pitch_limit(enable)
+    """ ------------------------------------------------------------------------"""
     """ Callbacks """
     def _humanoid_gait_changed(self, current_time: float, gait_name: str):
         if self.state != gait_name:

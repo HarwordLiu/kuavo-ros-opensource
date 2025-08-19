@@ -144,15 +144,17 @@ namespace humanoid_controller
 
   bool humanoidController::init(HybridJointInterface *robot_hw, ros::NodeHandle &controller_nh, bool is_nodelet_node)
   {
-    RobotVersion rb_version(3, 4);
+    int robot_version_int;
+    RobotVersion robot_version(3, 4);
     if (controllerNh_.hasParam("/robot_version"))
     {
-        int rb_version_int;
-        controllerNh_.getParam("/robot_version", rb_version_int);
-        rb_version = RobotVersion::create(rb_version_int);
+        controllerNh_.getParam("/robot_version", robot_version_int);
+        int major = robot_version_int / 10;
+        int minor = robot_version_int % 10;
+        robot_version = RobotVersion(major, minor);
     }
     is_nodelet_node_ = is_nodelet_node;
-    drake_interface_ = HighlyDynamic::HumanoidInterfaceDrake::getInstancePtr(rb_version, true, 2e-3);
+    drake_interface_ = HighlyDynamic::HumanoidInterfaceDrake::getInstancePtr(robot_version, true, 2e-3);
     kuavo_settings_ = drake_interface_->getKuavoSettings();
     scalar_t comHeight = drake_interface_->getIntialHeight();
     ros::param::set("/com_height", comHeight);
@@ -174,7 +176,7 @@ namespace humanoid_controller
     headNum_ = motor_info.num_head_joints;
     armNumReal_ = motor_info.num_arm_joints;
     jointNumReal_ = motor_info.num_joints - headNum_ - armNumReal_;
-    std::string imu_type_str = motor_info.getIMUType(rb_version);
+    std::string imu_type_str = motor_info.getIMUType(robot_version_int);
     if (imu_type_str == "xsens")
     {
       imuType_ = 2;
@@ -273,7 +275,7 @@ namespace humanoid_controller
 #ifdef KUAVO_CONTROL_LIB_FOUND
     joint_filter_ptr_ = new HighlyDynamic::JointFilter(&plant, &kuavo_settings_, 12, dt_, ros_logger_);
 #endif
-    setupHumanoidInterface(taskFile, urdfFile, referenceFile, gaitCommandFile, verbose, rb_version);
+    setupHumanoidInterface(taskFile, urdfFile, referenceFile, gaitCommandFile, verbose, robot_version_int);
     setupMpc();
     setupMrt();
     // Visualization
@@ -328,7 +330,7 @@ namespace humanoid_controller
     Eigen::Vector3d acc_filter_params;
     Eigen::Vector3d gyro_filter_params;
     double arm_joint_pos_filter_cutoff_freq=20,arm_joint_vel_filter_cutoff_freq=20,mrt_joint_vel_filter_cutoff_freq=200;
-    auto drake_interface_ = HighlyDynamic::HumanoidInterfaceDrake::getInstancePtr(rb_version, true, 2e-3);
+    auto drake_interface_ = HighlyDynamic::HumanoidInterfaceDrake::getInstancePtr(robot_version, true, 2e-3);
     defalutJointPos_.head(jointNum_) = drake_interface_->getDefaultJointState();
     defalutJointPos_.tail(armNum_) = vector_t::Zero(armNum_);
     currentArmTargetTrajectories_ = {{0.0}, {vector_t::Zero(armNumReal_)}, {vector_t::Zero(info.inputDim)}};
@@ -526,7 +528,8 @@ namespace humanoid_controller
           for(int i = 0; i < 12; i++)
             hand_wrench_cmd_(i) = msg->data[i];
         }
-      ); 
+      );
+      armJointSynchronizationSrv_ = controllerNh_.advertiseService("/arm_joint_synchronization", &humanoidController::armJointSynchronizationCallback, this); 
       enableArmCtrlSrv_ = controllerNh_.advertiseService("/enable_wbc_arm_trajectory_control", &humanoidController::enableArmTrajectoryControlCallback, this);
       enableMmArmCtrlSrv_ = controllerNh_.advertiseService("/enable_mm_wbc_arm_trajectory_control", &humanoidController::enableMmArmTrajectoryControlCallback, this);
       getMmArmCtrlSrv_ = controllerNh_.advertiseService("/get_mm_wbc_arm_trajectory_control", &humanoidController::getMmArmCtrlCallback, this);
@@ -558,6 +561,7 @@ namespace humanoid_controller
         }
       });
       
+      armEefWbcPosePublisher_ = controllerNh_.advertise<std_msgs::Float64MultiArray>("/humanoid_controller/wbc_arm_eef_pose", 10, true);
       // dexhand state
       dexhand_state_sub_ = controllerNh_.subscribe("/dexhand/state", 10, &humanoidController::dexhandStateCallback, this);
 
@@ -676,7 +680,6 @@ namespace humanoid_controller
   void humanoidController::robotlocalizationCallback(const nav_msgs::Odometry::ConstPtr &msg)
   {
     nav_msgs::Odometry robot_localization_ = *msg;
-    std::lock_guard<std::mutex> lock(robotlocalization_data_mutex_);
     robotlocalizationDataQueue.push(robot_localization_);
   }
 
@@ -778,10 +781,8 @@ namespace humanoid_controller
     seq_++;
     imuPub_.publish(imu_msg);
     kinematicPub_.publish(kinematics_odom);
-    { // robotlocalization_data_mutex_
-      std::lock_guard<std::mutex> lock(robotlocalization_data_mutex_);
-      if(!robotlocalizationDataQueue.empty())
-      {
+    if(!robotlocalizationDataQueue.empty())
+    {
       nav_msgs::Odometry robot_localization_ = robotlocalizationDataQueue.front();
       Eigen::Quaterniond robot_quat(robot_localization_.pose.pose.orientation.w, 
                                     robot_localization_.pose.pose.orientation.x, 
@@ -795,12 +796,11 @@ namespace humanoid_controller
       Eigen::Vector3d sensor_eulerAngles = quatToZyx(sensor_quat);
       Eigen::Vector3d updata_eulerAngles;
       updata_eulerAngles << robot_eulerAngles(0), sensor_eulerAngles(1),sensor_eulerAngles(2);
-              robot_quat_state_update_ = Eigen::AngleAxisd(updata_eulerAngles[0], Eigen::Vector3d::UnitZ())*
+      robot_quat_state_update_ = Eigen::AngleAxisd(updata_eulerAngles[0], Eigen::Vector3d::UnitZ())*
                                  Eigen::AngleAxisd(updata_eulerAngles[1], Eigen::Vector3d::UnitY())*
                                  Eigen::AngleAxisd(updata_eulerAngles[2], Eigen::Vector3d::UnitX());
       robotlocalizationDataQueue.pop();
-      }
-    }  // robotlocalization_data_mutex_
+    }
     sensor_data_new.quat_.w() = robot_quat_state_update_.w();
     sensor_data_new.quat_.x() = robot_quat_state_update_.x();
     sensor_data_new.quat_.y() = robot_quat_state_update_.y();
@@ -813,16 +813,54 @@ namespace humanoid_controller
   
   bool humanoidController::enableArmTrajectoryControlCallback(kuavo_msgs::changeArmCtrlMode::Request &req, kuavo_msgs::changeArmCtrlMode::Response &res)
   {
+      bool old_mode = use_ros_arm_joint_trajectory_;
       use_ros_arm_joint_trajectory_ = req.control_mode;
+      
+      // 记录模式切换
+      if (old_mode != use_ros_arm_joint_trajectory_) 
+      {
+          ROS_INFO_STREAM("[ArmControl] ROS arm trajectory control mode changed: " << (use_ros_arm_joint_trajectory_ ? "ENABLED" : "DISABLED"));
+      }
+      
       res.result = true;
       return true;
   }
 
   bool humanoidController::enableMmArmTrajectoryControlCallback(kuavo_msgs::changeArmCtrlMode::Request &req, kuavo_msgs::changeArmCtrlMode::Response &res)
   {
+      bool old_mode = use_mm_arm_joint_trajectory_;
       use_mm_arm_joint_trajectory_ = req.control_mode;
+      
+      {
+        mm_arm_joint_trajectory_.pos = currentObservationWBC_.state.segment(12 + jointNumReal_, armNumReal_);
+        mm_arm_joint_trajectory_.vel = vector_t::Zero(armNumReal_);
+      }
+
+      // 记录模式切换
+      if (old_mode != use_mm_arm_joint_trajectory_) 
+      {
+          ROS_INFO_STREAM("[ArmControl] MM arm trajectory control mode changed: " << (use_mm_arm_joint_trajectory_ ? "ENABLED" : "DISABLED"));
+      }
+      // arm_joint_trajectory_.pos = currentObservationWBC_.state.segment(12 + jointNumReal_, armNumReal_);
       res.result = true;
       return true;
+  }
+
+  bool humanoidController::armJointSynchronizationCallback(kuavo_msgs::changeArmCtrlMode::Request &req, kuavo_msgs::changeArmCtrlMode::Response &res)
+  {
+    if (req.control_mode)
+    {
+      // arm_joint_trajectory_.pos = currentObservationWBC_.state.segment(12 + jointNumReal_, armNumReal_);
+      mm_arm_joint_trajectory_.pos = currentObservationWBC_.state.segment(12 + jointNumReal_, armNumReal_);
+      res.result = true;
+      res.message = "Successfully synchronize arm joint trajectory";
+    }
+    else
+    {
+      res.result = true;
+      res.message = "disable arm joint synchronization";
+    }
+    return true;
   }
 
   bool humanoidController::getMmArmCtrlCallback(kuavo_msgs::changeArmCtrlMode::Request &req, kuavo_msgs::changeArmCtrlMode::Response &res)
@@ -942,7 +980,7 @@ namespace humanoid_controller
     // }
     ROS_INFO_STREAM("Initial policy has been received.");
     // usleep(1000); // wait for 1s to ensure that the initial policy is received by the MPC node
-    if (!is_real_ && !is_play_back_mode_ && !use_shm_communication_)
+    if (!is_real_ && !is_play_back_mode_)
       callSimStartSrv(controllerNh_);
     // if (is_real_)
     // {
@@ -1363,7 +1401,6 @@ namespace humanoid_controller
       
     }
     currentObservation_.input = optimizedInput_mrt;// 传什么值都一样, MPC不使用obs.input
-
     if (use_ros_arm_joint_trajectory_)
     {
       // TODO: feedback in planner
@@ -1399,6 +1436,8 @@ namespace humanoid_controller
           optimizedState2WBC_mrt_.tail(armNumReal_) = mm_arm_joint_trajectory_.pos;
       }
     }
+
+
     // // use filter output
     optimizedState2WBC_mrt_.tail(armNumReal_) = arm_joint_pos_filter_.update(optimizedState2WBC_mrt_.tail(armNumReal_));
     optimizedInput2WBC_mrt_.tail(armNumReal_) = arm_joint_vel_filter_.update(optimizedInput2WBC_mrt_.tail(armNumReal_));
@@ -1476,6 +1515,8 @@ namespace humanoid_controller
       std::lock_guard<std::mutex> lk(disable_wbc_srv_mtx_);
       enable_wbc = !disable_wbc_;
     }
+
+    publishWbcArmEndEffectorPose();
 
     std::chrono::time_point<std::chrono::high_resolution_clock> t4;
     if (enable_wbc)
@@ -1809,7 +1850,6 @@ namespace humanoid_controller
     jointCurrentWBC_ = data.jointTorque_;
 
     quat_ = quat_init.inverse() * data.quat_;
-    
     angularVel_ = data.angularVel_;
     linearAccel_ = data.linearAccel_;
     orientationCovariance_ = data.orientationCovariance_;
@@ -1867,8 +1907,8 @@ namespace humanoid_controller
     // std::cout << "mode: " << modeNumber2String(est_mode) << std::endl;
     last_time_ = current_time_;
     ros::Duration period = ros::Duration(diff_time);
-    // std::cout << "diff_time: " << period.toSec() << std::endl;
     // std::cout << "diff_time: " << diff_time << std::endl;
+    // std::cout << "diff_time: " << period.toSec() << std::endl;
 
     vector_t activeTorque_ = jointTorque_;
     vector_t activeTorqueWBC_ =  jointCurrentWBC_;
@@ -2023,9 +2063,9 @@ namespace humanoid_controller
   }
 
   void humanoidController::setupHumanoidInterface(const std::string &taskFile, const std::string &urdfFile, const std::string &referenceFile, const std::string &gaitCommandFile,
-                                                  bool verbose,  RobotVersion rb_version)
+                                                  bool verbose, int robot_version_int)
   {
-    HumanoidInterface_ = std::make_shared<HumanoidInterface>(taskFile, urdfFile, referenceFile, gaitCommandFile, rb_version);
+    HumanoidInterface_ = std::make_shared<HumanoidInterface>(taskFile, urdfFile, referenceFile, gaitCommandFile, robot_version_int);
     rbdConversions_ = std::make_shared<CentroidalModelRbdConversions>(HumanoidInterface_->getPinocchioInterface(),
                                                                       HumanoidInterface_->getCentroidalModelInfo());
     // **************** create the centroidal model for WBC ***********
@@ -2036,7 +2076,7 @@ namespace humanoid_controller
 
     vector_t defaultJointState(pinocchioInterfaceWBCPtr_->getModel().nq - 6);
     defaultJointState.setZero();
-    auto drake_interface_ = HighlyDynamic::HumanoidInterfaceDrake::getInstancePtr(rb_version, true, 2e-3);
+    auto drake_interface_ = HighlyDynamic::HumanoidInterfaceDrake::getInstancePtr(RobotVersion(robot_version_int / 10, robot_version_int % 10), true, 2e-3);
     defaultJointState.head(jointNum_) = drake_interface_->getDefaultJointState();
 
     // CentroidalModelInfo
@@ -2049,6 +2089,10 @@ namespace humanoid_controller
                                                                     modelSettings_.contactNames3DoF);
     eeKinematicsWBCPtr_->setPinocchioInterface(*pinocchioInterfaceWBCPtr_);
   
+    eeSpatialKinematicsWBCPtr_ = std::make_shared<PinocchioEndEffectorSpatialKinematics>(*pinocchioInterfaceWBCPtr_, pinocchioMapping,
+                                                                                         modelSettings_.contactNames6DoF);
+    eeSpatialKinematicsWBCPtr_->setPinocchioInterface(*pinocchioInterfaceWBCPtr_);
+
     centroidalModelInfoEstimate_ = centroidal_model::createCentroidalModelInfo(
       *pinocchioInterfaceEstimatePtr_, centroidal_model::loadCentroidalType(taskFile), defaultJointState, modelSettings_.contactNames3DoF,
       modelSettings_.contactNames6DoF);
@@ -2436,6 +2480,42 @@ namespace humanoid_controller
     }
   }
 
+  void humanoidController::publishWbcArmEndEffectorPose()
+  {
+    auto& infoWBC = centroidalModelInfoWBC_;
+    // publish arm eef pose from WBC
+    if (infoWBC.numSixDofContacts > 0 && eeSpatialKinematicsWBCPtr_)
+    {
+        // Manually update the pinocchio data for the WBC interface, similar to how WBC does it internally.
+        auto& wbc_pinocchio_model = pinocchioInterfaceWBCPtr_->getModel();
+        auto& wbc_pinocchio_data = pinocchioInterfaceWBCPtr_->getData();
+        const auto q_wbc = CentroidalModelPinocchioMapping(centroidalModelInfoWBC_).getPinocchioJointPosition(currentObservationWBC_.state);
+        pinocchio::forwardKinematics(wbc_pinocchio_model, wbc_pinocchio_data, q_wbc);
+        pinocchio::updateFramePlacements(wbc_pinocchio_model, wbc_pinocchio_data);
+
+        // Call with empty vector to use the pre-updated data
+        const auto armPositions = eeSpatialKinematicsWBCPtr_->getPosition(vector_t());
+        const auto armOrientations = eeSpatialKinematicsWBCPtr_->getOrientation(vector_t());
+
+        if (armPositions.size() == infoWBC.numSixDofContacts)
+        {
+            std_msgs::Float64MultiArray pose_msg;
+            pose_msg.data.resize(armPositions.size() * 7);
+            for (size_t i = 0; i < armPositions.size(); ++i)
+            {
+                pose_msg.data[i * 7 + 0] = armPositions[i].x();
+                pose_msg.data[i * 7 + 1] = armPositions[i].y();
+                pose_msg.data[i * 7 + 2] = armPositions[i].z();
+                pose_msg.data[i * 7 + 3] = armOrientations[i].x();
+                pose_msg.data[i * 7 + 4] = armOrientations[i].y();
+                pose_msg.data[i * 7 + 5] = armOrientations[i].z();
+                pose_msg.data[i * 7 + 6] = armOrientations[i].w();
+            }
+            armEefWbcPosePublisher_.publish(pose_msg);
+        }
+    }
+  }
+
   void humanoidController::setupCpuIsolation()
   {
     // 从ROS参数获取隔离的CPU核心索引
@@ -2599,3 +2679,4 @@ namespace humanoid_controller
 } // namespace humanoid_controller
 // PLUGINLIB_EXPORT_CLASS(humanoid_controller::humanoidController)
 // PLUGINLIB_EXPORT_CLASS(humanoid_controller::humanoidCheaterController)
+

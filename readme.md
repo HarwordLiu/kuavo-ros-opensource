@@ -1,20 +1,5 @@
 # 如何使用
 
-# 接口文档
-
-[readme_topics.md](./docs/readme_topics.md)
-
-[运动控制接口文档](./docs/运动控制API.md)
-
-[全身控制器相关参数说明](./docs/info文件说明.md)
-
-[kuavo_asset配置文档说明](./docs/kuavo_json文档说明.md)
-
-[运动控制接口及topic补充文档](./docs/补充工程说明文档.md)
-
-[ROBOT_VERSION 说明](./docs/robot_version版本号说明.md)
-
-
 ## 开源仓库
 ```shell
 # https
@@ -118,6 +103,7 @@ roslaunch humanoid_controllers load_kuavo_isaac_sim.launch  # 启动控制器、
 
 ##### 末端执行器配置
 在运行实物之前, 您需要先修改`src/kuavo_assets/config/kuavo_v$ROBOT_VERSION/kuavo.json`中EndEffectorType为您实物机器人的执行器类型:
+- `none`: 无末端执行器或者需要屏蔽末端执行器时使用
 - `qiangnao` : 灵巧手, 默认值
 - `lejuclaw` : 二指夹爪
 - `qiangnao_touch` : 触觉灵巧手

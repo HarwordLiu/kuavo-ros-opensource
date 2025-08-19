@@ -1,6 +1,5 @@
 #include "kuavo_common/common/kuavo_settings.h"
 #include "kuavo_common/common/utils.h"
-
 namespace HighlyDynamic
 {
     struct motor_config
@@ -96,7 +95,7 @@ namespace HighlyDynamic
         running_settings.joint_kd = robot_config.getValue<std::vector<int32_t>>("joint_kd");
     }
 
-    std::string HardwareSettings::getEcmasterType(RobotVersion rb_version) {
+    std::string HardwareSettings::getEcmasterType(int robot_version_int) {
 
         std::string filePath = getUserHomeDirectory() + "/.config/lejuconfig/EcMasterType.ini";
         std::ifstream file(filePath);
@@ -118,7 +117,7 @@ namespace HighlyDynamic
 
         return ecMasterType;
     }
-    std::string HardwareSettings::getIMUType(RobotVersion rb_version) {
+    std::string HardwareSettings::getIMUType(int robot_version_int) {
 
         std::string filePath = getUserHomeDirectory() + "/.config/lejuconfig/ImuType.ini";
         std::ifstream file(filePath);

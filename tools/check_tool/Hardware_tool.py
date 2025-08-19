@@ -509,7 +509,7 @@ def touch_dexhand():
     if choice == "1":
         handTouch_usb()
     elif choice == "2":
-        command = "bash "+ folder_path +"/touch_dexhand_test.sh --test" 
+        command = "bash "+ folder_path +"/dexhand_test.sh --touch --test" 
         # 使用 subprocess.run() 运行命令
         subprocess.run(command, shell=True)
     else:
@@ -612,22 +612,6 @@ def hip_imu_serial_set():
 def hip_imu_test():
     kuavo_ros_file_path = folder_path + "/hip_imu_test.sh"
     kuavo_open_file_path = folder_path + "../../installed/share/hardware_plant/lib/hipnuc_imu/scripts/hip_imu_test.sh" 
-    
-    if os.path.exists(kuavo_ros_file_path):
-        command = "bash "+ kuavo_ros_file_path
-    elif os.path.exists(kuavo_open_file_path):
-        command = "bash "+ kuavo_open_file_path
-    else:
-        print(f"The file {file_path} does not exist.")
-        return
-        
-    # 使用 subprocess.run() 运行命令
-    subprocess.run(command, shell=True)
-
-
-def isolate_cores():
-    kuavo_ros_file_path = folder_path + "/isolate_cores.sh"
-    kuavo_open_file_path = folder_path + "../../installed/share/hardware_plant/lib/hipnuc_imu/scripts/isolate_cores.sh" 
     
     if os.path.exists(kuavo_ros_file_path):
         command = "bash "+ kuavo_ros_file_path
@@ -886,7 +870,6 @@ def secondary_menu():
         print("n. 更新ros密钥")
         print("o. 国产IMU配置udev规则")
         print("p. 国产IMU测试")
-        print("r. 隔离CPU核心 ")
         print("u. 配置robot上线提醒")
         print("t. 恢复出厂文件夹")
 
@@ -1015,11 +998,6 @@ def secondary_menu():
             print(bcolors.HEADER + "###开始，国产IMU测试###" + bcolors.ENDC)
             hip_imu_test()
             print(bcolors.HEADER + "###结束，国产IMU测试###" + bcolors.ENDC)
-            break
-        elif option == "r":
-            print(bcolors.HEADER + "###开始，隔离CPU核心###" + bcolors.ENDC)
-            isolate_cores()
-            print(bcolors.HEADER + "###结束，隔离CPU核心###" + bcolors.ENDC)
             break
         elif option == "u":
             print(bcolors.HEADER + "###开始，robot上线提醒配置###" + bcolors.ENDC)

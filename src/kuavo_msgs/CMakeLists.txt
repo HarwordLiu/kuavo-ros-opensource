@@ -81,6 +81,10 @@ add_message_files(
   AprilTagDetection.msg
   AprilTagDetectionArray.msg
   motorParam.msg
+  footPoseWithVision.msg
+  footPoseWithVisionArray.msg
+  Rq2f85ClawCmd.msg
+  Rq2f85ClawState.msg
   # motion_capture_ik
   robotArmQVVD.msg
   ikSolveError.msg
@@ -96,16 +100,15 @@ add_message_files(
   jointBezierTrajectory.msg
   planArmState.msg
   RobotActionState.msg
+  tagDataArray.msg
   qv.msg
   fullBodyTargetTrajectories.msg
 
   # kuavo_tf2_web_republisher
   TFArray.msg
-  armHandPoseFree.msg
-  twoArmHandPoseCmdFree.msg
-  twoArmHandPoseFree.msg
 
-  JoySticks.msg
+  # kuavo_arm_collision_check
+  armCollisionCheckInfo.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -138,6 +141,7 @@ add_service_files(
 
   SpeechSynthesis.srv
   setMmCtrlFrame.srv
+  GetTargetPartPoseInCamera.srv
   ExecuteArmAction.srv
   planArmTrajectoryBezierCurve.srv
   planArmTrajectoryCubicSpline.srv
@@ -146,7 +150,7 @@ add_service_files(
   # kuavo_tf2_web_republisher
   RepublishTFs.srv
 
-  twoArmHandPoseCmdFreeSrv.srv
+  SetObjectPosition.srv
 )
 
 ## Generate actions in the 'action' folder

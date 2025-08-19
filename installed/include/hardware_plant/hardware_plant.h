@@ -1,12 +1,10 @@
 #pragma once
 
 #include <iostream>
-#include <set>
 #include <unordered_map>
 #include "kuavo_common/common/robot_state.h"
 #include "kuavo_common/common/sensor_data.h"
 #include "kuavo_common/common/kuavo_settings.h"
-#include "kuavo_common/common/common.h"
 #include "kuavo_common/common/json_config_reader.hpp"
 #include "kuavo_common/kuavo_common.h"
 #include "actuators_interface.h"
@@ -18,7 +16,6 @@
 #include "jodell_claw_driver.h"
 #include "dynamixel_interface.h"
 #include "ankle_solver.h"
-#include "hand_controller.h"
 #include "lejuclaw_controller.h"
 #include "claw_types.h"
 #include "gesture_types.h"
@@ -40,7 +37,7 @@ inline std::vector<double> eigenToStdVector(const Eigen::VectorXd& vec) {
 struct HardwareParam {
     bool cali_leg{false};
     std::vector<double> default_joint_pos;
-    RobotVersion robot_version{4, 2};
+    int robot_version{42};
     bool cali{false}; 
     bool cali_arm{false};
     int build_cppad_state{0};
@@ -120,18 +117,13 @@ public:
 
 
     bool checkLejuClawInitialized();
-    bool checkHandInitialized();
-    bool executeGestures(const std::vector<eef_controller::GestureExecuteInfo>& gesture_tasks, std::string& err_msg);
-    std::vector<eef_controller::GestureInfoMsg> listGestures();
-    bool isGestureExecuting();
     bool controlLejuClaw(eef_controller::ControlClawRequest& req, eef_controller::ControlClawResponse& res);
     bool controlLejuClaw(eef_controller::lejuClawCommand& command);
     eef_controller::ClawState getLejuClawState();
 
     void setHardwareParam(const HardwareParam& param) { hardware_param_ = param; }
     HardwareParam& getHardwareParam() { return hardware_param_; }
-    const std::array<eef_controller::BrainCoController::HandStatus, 2>&  getHandControllerStatus();
-    eef_controller::FingerStatusPtrArray getHandControllerWithTouchStatus();
+    eef_controller::FingerStatusPtrArray getHandControllerStatus();
 
     bool th_running_ = false;
     int hardware_status_ = -1;
@@ -153,37 +145,8 @@ public:
     std::vector<double_t> min_joint_position_limits;
     std::vector<double_t> max_joint_position_limits;
 
-    std::unique_ptr<eef_controller::TouchDexhandContrller> dexhand_actuator;
+    std::unique_ptr<eef_controller::DexhandController> dexhand_actuator;
     std::string gesture_filepath_;
-
-    std::mutex disable_motor_mtx_;
-    std::set<int> disableMotor_;
-
-    inline int getDisableMotorId()
-    {
-      std::lock_guard<std::mutex> lk(disable_motor_mtx_);
-      if (disableMotor_.empty())
-      {
-        return -1;
-      }
-      auto first_id = *disableMotor_.begin();
-      disableMotor_.erase(first_id);
-      return first_id;
-    }
-
-          // 禁用电机ID管理接口
-    bool addDisableMotorId(int id) 
-    {
-        std::lock_guard<std::mutex> lk(disable_motor_mtx_);
-        auto result = disableMotor_.insert(id);
-        return result.second; // true: 新插入，false: 已存在
-    }
-
-    size_t getDisableMotorSize() 
-    {
-        std::lock_guard<std::mutex> lk(disable_motor_mtx_);
-        return disableMotor_.size();
-    }
 
 private:
 
@@ -235,7 +198,7 @@ private:
     HardwareSettings motor_info;
     bool has_end_effectors{false};
     double q_hip_pitch_prev_;
-    RobotVersion rb_version_;
+    RobotVersion robot_version_;
     std::string ecmaster_type_ = "elmo";
     HardwareParam hardware_param_;
 

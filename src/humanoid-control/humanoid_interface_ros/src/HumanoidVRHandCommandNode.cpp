@@ -469,31 +469,31 @@ class VRHandCommandNode {
       srv.request.control_mode = mode;
       auto change_arm_mode_service_client_ = nh_.serviceClient<kuavo_msgs::changeArmCtrlMode>("/humanoid_change_arm_ctrl_mode");
 
-      // 调用设置arm_mode_changing的服务
-      std_srvs::Trigger trigger_srv;
-      
-      // Control mode:
-      // 0: Keep current arm pose
-      // 1: Auto swing arms during walking
-      // 2: External control through VR/teleoperation
-      if (mode == 2 && ros::service::exists("/quest3/set_arm_mode_changing", false)) {
-        
-        auto set_arm_mode_changing_client_ = nh_.serviceClient<std_srvs::Trigger>("/quest3/set_arm_mode_changing");
-        if (set_arm_mode_changing_client_.call(trigger_srv))
-        {
-          ROS_INFO("Set arm mode changing service call successful");
-        }
-        else
-        {
-          ROS_ERROR("Failed to call set arm mode changing service");
-        }
-      }
-      else ROS_WARN("Service /quest3/set_arm_mode_changing skipping call");
-      
       // 调用服务
       if (change_arm_mode_service_client_.call(srv))
       {
         ROS_INFO("SetArmModeSrv call successful");
+        
+        // 调用设置arm_mode_changing的服务
+        std_srvs::Trigger trigger_srv;
+        
+        // Control mode:
+        // 0: Keep current arm pose
+        // 1: Auto swing arms during walking
+        // 2: External control through VR/teleoperation
+        if (mode == 2 && ros::service::exists("/quest3/set_arm_mode_changing", false)) {
+          
+          auto set_arm_mode_changing_client_ = nh_.serviceClient<std_srvs::Trigger>("/quest3/set_arm_mode_changing");
+          if (set_arm_mode_changing_client_.call(trigger_srv))
+          {
+            ROS_INFO("Set arm mode changing service call successful");
+          }
+          else
+          {
+            ROS_ERROR("Failed to call set arm mode changing service");
+          }
+        }
+        else ROS_WARN("Service /quest3/set_arm_mode_changing skipping call");
       }
       else
       {
@@ -611,14 +611,16 @@ int main(int argc, char* argv[]) {
   // Get node parameters
   std::string referenceFile;
   nodeHandle.getParam("/referenceFile", referenceFile);
-  RobotVersion rb_version(4, 0);
+  RobotVersion robot_version(4, 0);
   if (nodeHandle.hasParam("/robot_version"))
   {
-      int rb_version_int;
-      nodeHandle.getParam("/robot_version", rb_version_int);
-      rb_version = RobotVersion::create(rb_version_int);
+      int version_num;
+      nodeHandle.getParam("/robot_version", version_num);
+      int major = version_num / 10;
+      int minor = version_num % 10;
+      robot_version = RobotVersion(major, minor);
   }
-  auto drake_interface_ = HighlyDynamic::HumanoidInterfaceDrake::getInstancePtr(rb_version, true, 2e-3);
+  auto drake_interface_ = HighlyDynamic::HumanoidInterfaceDrake::getInstancePtr(robot_version, true, 2e-3);
   defaultJointState = drake_interface_->getDefaultJointState();
   // comHeight = drake_interface_->getIntialHeight();
   // ros::param::set("/com_height", comHeight);

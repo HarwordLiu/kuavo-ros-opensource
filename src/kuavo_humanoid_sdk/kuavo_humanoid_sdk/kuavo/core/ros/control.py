@@ -21,6 +21,7 @@ from kuavo_humanoid_sdk.msg.kuavo_msgs.srv import (gestureExecute, gestureExecut
 from kuavo_humanoid_sdk.msg.kuavo_msgs.msg import twoArmHandPoseCmd, ikSolveParam, armHandPose
 from kuavo_humanoid_sdk.msg.kuavo_msgs.srv import twoArmHandPoseCmdSrv, fkSrv
 from std_srvs.srv import SetBool, SetBoolRequest
+from std_msgs.msg import Float64MultiArray
 
 
 
@@ -190,20 +191,22 @@ class ControlRobotArm:
         self._pub_ctrl_arm_traj = rospy.Publisher('/kuavo_arm_traj', JointState, queue_size=10)
         self._pub_ctrl_arm_target_poses = rospy.Publisher('/kuavo_arm_target_poses', armTargetPoses, queue_size=10)
         self._pub_ctrl_hand_pose_cmd = rospy.Publisher('/mm/two_arm_hand_pose_cmd', twoArmHandPoseCmd, queue_size=10)
+        self._pub_hand_wrench = rospy.Publisher('/hand_wrench_cmd', Float64MultiArray, queue_size=10)
 
     def connect(self, timeout:float=1.0)-> bool:
         start_time = rospy.Time.now()
         publishers = [
-            (self._pub_ctrl_arm_traj, "arm trajectory publisher"),
-            (self._pub_ctrl_arm_target_poses, "arm target poses publisher")
+            (self._pub_ctrl_arm_traj, "arm trajectory publisher", False),
+            (self._pub_ctrl_arm_target_poses, "arm target poses publisher", False)
         ]
         
         success = True
-        for pub, name in publishers:
+        for pub, name, required in publishers:
             while pub.get_num_connections() == 0:
                 if (rospy.Time.now() - start_time).to_sec() > timeout:
                     SDKLogger.error(f"Timeout waiting for {name} connection, '{pub.name}'")
-                    success = False
+                    if required:
+                        success = False
                     break
                 rospy.sleep(0.1)
         return success
@@ -406,6 +409,32 @@ class ControlRobotArm:
         except Exception as e:
             SDKLogger.error(f"[Error] get arm ctrl mode: {e}")
         return None
+    
+    def pub_hand_wrench_cmd(self, left_wrench, right_wrench):
+        """
+        发布末端力控制命令
+        参数:
+            left_wrench: 左手6维力控指令 [Fx, Fy, Fz, Tx, Ty, Tz]
+            right_wrench: 右手6维力控指令 [Fx, Fy, Fz, Tx, Ty, Tz]
+            Fx: 沿X轴的线性力
+            Fy: 沿Y轴的线性力
+            Fz: 沿Z轴的线性力
+            Tx: 绕X轴的力矩
+            Ty: 绕Y轴的力矩
+            Tz: 绕Z轴的力矩
+        """
+        if len(left_wrench) != 6 or len(right_wrench) != 6:
+            SDKLogger.error("Wrench data must be 6-dimensional")
+            return False
+            
+        try:
+            msg = Float64MultiArray()
+            msg.data = list(left_wrench) + list(right_wrench)
+            self._pub_hand_wrench.publish(msg)
+            return True
+        except Exception as e:
+            SDKLogger.error(f"Publish hand wrench failed: {e}")
+            return False
         
 """ Control Robot Head """
 class ControlRobotHead:
@@ -415,13 +444,15 @@ class ControlRobotHead:
     def connect(self, timeout:float=1.0)->bool:
         start_time = rospy.Time.now()
         publishers = [
-            # (self._pub_ctrl_robot_head, "robot head publisher") # not need check!
+            (self._pub_ctrl_robot_head, "robot head publisher", False) # not need check!
         ]
-        for pub, name in publishers:
+        for pub, name, required in publishers:
             while pub.get_num_connections() == 0:
                 if (rospy.Time.now() - start_time).to_sec() > timeout:
                     SDKLogger.error(f"Timeout waiting for {name} connection, '{pub.name}'")
-                    return False
+                    if required:
+                        return False
+                    break
                 rospy.sleep(0.1)
         return True
     def pub_control_robot_head(self, yaw:float, pitch:float)->bool:
@@ -629,23 +660,25 @@ class ControlRobotMotion:
         self._pub_switch_gait = rospy.Publisher('/humanoid_switch_gait_by_name', switchGaitByName, queue_size=10)
         self._pub_step_ctrl = rospy.Publisher('/humanoid_mpc_foot_pose_target_trajectories', footPoseTargetTrajectories, queue_size=10)
 
-    def connect(self, timeout:float=2.0)-> bool:
+    def connect(self, timeout:float=3.0)-> bool:
         start_time = rospy.Time.now()
         publishers = [
             # (self._pub_joy, "joy publisher"),
-            (self._pub_cmd_vel, "cmd_vel publisher"),
-            (self._pub_cmd_pose, "cmd_pose publisher"),
-            (self._pub_step_ctrl, "step_ctrl publisher"),
-            (self._pub_switch_gait, "switch_gait publisher"),
-            (self._pub_cmd_pose_world, "cmd_pose_world publisher"),
+            # pub name required
+            (self._pub_cmd_vel, "cmd_vel publisher", False),
+            (self._pub_cmd_pose, "cmd_pose publisher", False),
+            (self._pub_step_ctrl, "step_ctrl publisher", False),
+            (self._pub_switch_gait, "switch_gait publisher", False),
+            (self._pub_cmd_pose_world, "cmd_pose_world publisher", False),
         ]
         
         success = True
-        for pub, name in publishers:
+        for pub, name, required in publishers:
             while pub.get_num_connections() == 0:
                 if (rospy.Time.now() - start_time).to_sec() > timeout:
                     SDKLogger.error(f"Timeout waiting for {name} connection, '{pub.name}'")
-                    success = False
+                    if required:
+                        success = False
                     break
                 rospy.sleep(0.1)
         return success
@@ -1175,11 +1208,34 @@ class KuavoRobotControl:
             SDKLogger.error(f"Service call failed: {e}")
         return False, None, 'failed'
 
+    def control_hand_wrench(self, left_wrench: list, right_wrench: list) -> bool:
+        return self.kuavo_arm_control.pub_hand_wrench_cmd(left_wrench, right_wrench)
     
-""" ------------------------------------------------------------------------------"""    
-
-
-
+    def enable_base_pitch_limit(self, enable: bool) -> Tuple[bool, str]:
+        res_msg = 'failed'
+        try:
+            service_name = '/humanoid/mpc/enable_base_pitch_limit'
+            rospy.wait_for_service(service=service_name, timeout=2.0)
+            pitch_limit_service = rospy.ServiceProxy(service_name, SetBool)
+            
+            # request
+            request = SetBoolRequest()
+            request.data = enable
+            response = pitch_limit_service(request)
+            if not response.success:
+                SDKLogger.error(f"Failed to enable pitch limit: {response.message}")
+                return False, response.message
+            return True, 'success'
+        except rospy.ServiceException as e:
+            SDKLogger.error(f"Service call failed: {e}")
+            res_msg = str(e)
+        except rospy.ROSException as e:
+            SDKLogger.error(f"Service call failed: {e}")
+            res_msg = str(e)
+        except Exception as e:
+            SDKLogger.error(f"Service call failed: {e}")
+            res_msg = str(e)
+        return False, res_msg
 
 def euler_to_rotation_matrix(yaw, pitch, roll):
     # 计算各轴的旋转矩阵

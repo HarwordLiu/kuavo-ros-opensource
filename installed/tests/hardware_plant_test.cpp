@@ -62,11 +62,11 @@ public:
             std::cerr << "使用默认版本 42" << std::endl;
         }
         else{
-            this->rb_version = RobotVersion::create(std::atoi(robot_version_env));
-            std::cout << "使用环境变量 ROBOT_VERSION: " << this->rb_version.to_string() << std::endl;
+            this->robot_version_int = std::atoi(robot_version_env);
+            std::cout << "使用环境变量 ROBOT_VERSION: " << this->robot_version_int << std::endl;
         }
         hardware_param = HardwareParam();
-        hardware_param.robot_version = this->rb_version;
+        hardware_param.robot_version = this->robot_version_int;
         if (kuavo_assets_path == ""){
             hardware_param.kuavo_assets_path = KUAVO_ASSETS_PATH; // 使用编译 KUAVO_ASSETS_PATH
         }
@@ -94,11 +94,11 @@ public:
 
         output_joint_move_to_request(joint_values, joint_type);
 
-        hardware_plant_->jointMoveTo(joint_values, 60.0, 0.02);
+        hardware_plant_->jointMoveTo(joint_values, 30.0, 0.02);
 
         std::this_thread::sleep_for(std::chrono::seconds(2));
         
-        hardware_plant_->jointMoveTo(init_joints_q, 60.0, 0.02);
+        hardware_plant_->jointMoveTo(init_joints_q, 30.0, 0.02);
         
     }
 
@@ -160,7 +160,7 @@ public:
         
         std::this_thread::sleep_for(std::chrono::seconds(3));
 
-        auto close_finger_status = hardware_plant_->getHandControllerWithTouchStatus();
+        auto close_finger_status = hardware_plant_->getHandControllerStatus();
         output_close_finger_status(close_finger_status);
 
         Eigen::VectorXd left_open_position(6);
@@ -176,7 +176,7 @@ public:
 
         std::this_thread::sleep_for(std::chrono::seconds(3));
 
-        auto open_finger_status = hardware_plant_->getHandControllerWithTouchStatus();
+        auto open_finger_status = hardware_plant_->getHandControllerStatus();
         output_close_finger_status(open_finger_status);
     }
 
@@ -191,23 +191,21 @@ public:
             std::cout << "位置：" << end_effector_cmd[1].position.transpose() << std::endl;
         };
 
-        auto output_close_finger_status = [](const std::array<eef_controller::BrainCoController::HandStatus, 2>& status){
+        auto output_close_finger_status = [](eef_controller::FingerStatusPtrArray& status){
             std::cout << "夹爪状态：" << std::endl;
             std::cout << "左手状态：" << std::endl;
             std::cout << "位置：" ;
             for (int i = 0; i < 6; i++) {
-                std::cout << static_cast<int>(status[0].position[i]) << " ";
+                std::cout << static_cast<int>(status[0]->positions[i]) << " ";
             }
             std::cout << std::endl;
             std::cout << "右手状态：" << std::endl;
             std::cout << "位置：" ;
             for (int i = 0; i < 6; i++) {
-                std::cout << static_cast<int>(status[1].position[i]) << " ";
+                std::cout << static_cast<int>(status[1]->positions[i]) << " ";
             }
             std::cout << std::endl;
         };
-
-
         Eigen::VectorXd left_close_position(6);
         left_close_position << 100, 100, 100, 100, 100, 100;
         Eigen::VectorXd right_close_position(6);
@@ -254,7 +252,7 @@ public:
         Eigen::Vector3d acc, gyro;
         Eigen::Quaterniond quat;
         auto motor_info = hardware_plant_->get_motor_info();
-        auto imu_type_str_ = motor_info.getIMUType(rb_version);
+        auto imu_type_str_ = motor_info.getIMUType(robot_version_int);
         for (int i = 0; i < SAMPLE_COUNT; ++i)
         {
             // 读取最新IMU数据
@@ -351,7 +349,7 @@ public:
 
 private:
     double dt_ = 0.001;
-    RobotVersion rb_version{4, 5};
+    int robot_version_int = 45;
     HardwareParam hardware_param;
     std::unique_ptr<HardwarePlant> hardware_plant_;
 };
