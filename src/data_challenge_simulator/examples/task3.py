@@ -32,13 +32,12 @@ def main():
     traj_ctrl = TrajectoryController(robot)  # 100Hz trajectory commands
     obj_pos = ObjectPose()
     
-    num = 50
+    num = 30
     # 定义随机范围
     REGIONS = {
-        "shampoo1": {"x": (0.18, 0.23), "y": (-0.22, -0.12), "z": (0.72, 0.72)},  # 区域 A
-        "shampoo2": {"x": (0.18, 0.23), "y": (-0.38, -0.28), "z": (0.72, 0.72)},  # 区域 B
-        "shampoo3": {"x": (0.35, 0.38), "y": (-0.22, -0.12), "z": (0.72, 0.72)},  # 区域 C
-        "shampoo4": {"x": (0.35, 0.38), "y": (-0.38, -0.28), "z": (0.72, 0.72)},  # 区域 D
+        "shampoo1": {"x": (0.23, 0.28), "y": (-0.23, -0.20), "z": (0.69, 0.69)},  # 区域 A
+        "shampoo2": {"x": (0.23, 0.28), "y": (-0.3, -0.28), "z": (0.69, 0.69)},  # 区域 B
+        "shampoo3": {"x": (0.23, 0.28), "y": (-0.39, -0.35), "z": (0.69, 0.69)},  # 区域 C
     }
     FRONT = [0.5, -0.5, 0.5, -0.5]
     BACK  = [0.5,  0.5, 0.5,  0.5]
@@ -47,7 +46,7 @@ def main():
 
     # 随机选择两个物体为正面
     all_objects = list(REGIONS.keys())
-    front_objects = random.sample(all_objects, 2)
+    front_objects = random.sample(all_objects, 1)
     back_objects = [obj for obj in all_objects if obj not in front_objects]
     object_configs = []
     for name, region in REGIONS.items():
@@ -82,13 +81,12 @@ def main():
         q1_target1 = [60, 0, 0, -100, 0, 0, 0,   70, 0, 0, -135, 70, 40, 0]
         q1_list1 = Utils.interpolate_joint_trajectory(q1_target1, num = num) 
             
-        q1_target2 = [10, 0, 0, -130, 70, 0, 0,   10, 5, 0, -135, 90, 90, 0]
+        q1_target2 = [30, 0, 0, -140, 70, 0, 0,   10, 5, 0, -135, 90, 90, 0]
         q1_list2 = Utils.interpolate_joint_trajectory(q1_target2, q1_target1, num = num)
 
         print("移动到第一个物体预抓位")
         # 使用高频轨迹控制器
         traj_ctrl.execute_trajectory(q1_list1, sleep_time=0.02)
-        time.sleep(0.2)
         traj_ctrl.execute_trajectory(q1_list2, sleep_time=0.02)
         time.sleep(1)
 
@@ -157,7 +155,7 @@ def main():
         q1_target6 = [-50, 20, -10, -50, -40, 0, -70,   60, 0, 10, -100, 110, 10, 0]
         q1_list6 = Utils.interpolate_joint_trajectory(q1_target6, q1_target5, num = num)
             
-        q1_target7 = [-40, 20, 10, -30, -150, 0, -70,   70, 0, 0, -135, 70, 40, 0]
+        q1_target7 = [-10, 3, 3, -80, -150, -50, -50,   70, 0, 0, -135, 70, 40, 0]
         q1_list7 = Utils.interpolate_joint_trajectory(q1_target7, q1_target6, num = num)
 
         q1_target8 = [10, 0, 0, -130, 70, 0, 0,   70, 0, 0, -135, 70, 40, 0]
@@ -183,9 +181,8 @@ def main():
         traj_ctrl.execute_trajectory(q1_list7, sleep_time=0.02)
         
         print("放置于目标区域")
-        time.sleep(0.5)
+        time.sleep(1)
         gripper_ctrl.control_left_gripper(0)
-        gripper_ctrl.control_right_gripper(0)
         time.sleep(0.5)
 
         traj_ctrl.execute_trajectory(q1_list8, sleep_time=0.02)
@@ -218,7 +215,6 @@ def main():
 
         print("移动到第二个物体预抓位")
         traj_ctrl.execute_trajectory(q2_list1, sleep_time=0.02)
-        time.sleep(0.2)
         traj_ctrl.execute_trajectory(q2_list2, sleep_time=0.02)
         time.sleep(1)
 
@@ -227,7 +223,7 @@ def main():
         l_pose2, r_pose2 = robot.arm_fk(curr_q2)
         pos_obj2 = obj_pos.get_position(obj2)
 
-        offset2_x = 0.1
+        offset2_x = 0.06
         offset2_y = -0.0175
         offset2_z = 0.046
         r_pose2_new1 = [pos_obj2[0]+offset2_x, pos_obj2[1]+offset2_y, pos_obj2[2]+offset2_z+0.1]
@@ -280,10 +276,10 @@ def main():
         q2_target5 = [-30, 20, -35, -100, -40, 0, -70,   -12, 10, 30, -80, 110, -10, -70]
         q2_list5 = Utils.interpolate_joint_trajectory(q2_target5,q2_target4, num = num) 
             
-        q2_target6 = [-50, 20, -10, -50, -40, 0, -70,   60, 0, 10, -100, 110, 10, 0]
+        q2_target6 = [-50, 20, -10, -80, -90, 0, -70,   60, 0, 10, -100, 110, 10, 0]
         q2_list6 = Utils.interpolate_joint_trajectory(q2_target6, q2_target5, num = num)
             
-        q2_target7 = [-10, 5, 10, -90, -150, -50, -50,   0, 0, 0, 0, 0, 0, 0]
+        q2_target7 = [-10, 15, 15, -75, -150, -50, -50,   0, 0, 0, 0, 0, 0, 0]
         q2_list7 = Utils.interpolate_joint_trajectory(q2_target7, q2_target6, num = num)
 
         print("第二个物体翻面操作")
@@ -306,7 +302,7 @@ def main():
         traj_ctrl.execute_trajectory(q2_list7, sleep_time=0.02)
         
         print("放置于目标区域")
-        time.sleep(0.5)
+        time.sleep(1)
         gripper_ctrl.control_left_gripper(0)
         gripper_ctrl.control_right_gripper(0)
         time.sleep(1)

@@ -6,7 +6,6 @@ class ObjectPose:
         # 定义物体名到 topic 的映射
         self.name_to_topic = {
             "box_grab": "/mujoco/box_grab/pose",
-            "plate": "/mujoco/plate/pose",
             "shampoo1": "/mujoco/shampoo1/pose",
             "shampoo2": "/mujoco/shampoo2/pose",
             "shampoo3": "/mujoco/shampoo3/pose",

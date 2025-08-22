@@ -215,7 +215,7 @@ class IkRos:
         )
                 # 添加 Robotiq85 命令发布者
         self.robotiq85_command_pub = rospy.Publisher(
-            "/gripper/command", Rq2f85ClawCmd, queue_size=10  # 假设消息类型名为 RobotiqCommand
+            "/gripper/command", JointState, queue_size=10  # 假设消息类型名为 RobotiqCommand
         )
         try:
             end_effector_mapping = {
@@ -361,11 +361,13 @@ class IkRos:
             left_cmd: 左夹爪命令，范围 0-255
             right_cmd: 右夹爪命令，范围 0-255
         """
-        msg = Rq2f85ClawCmd()  # 假设这是你的消息类型
+        msg = JointState()  # 假设这是你的消息类型
         msg.header.stamp = rospy.Time.now()
-        msg.header.frame_id = "state"
-        msg.left_cmd = float(left_cmd)
-        msg.right_cmd = float(right_cmd)
+        msg.header.frame_id = "gripper"
+        left_position = left_cmd
+        right_position = right_cmd
+        msg.name = ["left_gripper_joint","right_gripper_joint"]
+        msg.position = [left_position, right_position]
         self.robotiq85_command_pub.publish(msg)
 
     def pub_solved_arm_eef_pose(self, q_robot, current_pose, current_pose_right):

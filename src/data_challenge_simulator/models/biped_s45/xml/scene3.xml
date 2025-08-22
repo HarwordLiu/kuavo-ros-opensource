@@ -3,7 +3,7 @@
   <include file="../../assets/shampoo/model1.xml"/>
   <include file="../../assets/shampoo/model2.xml"/>
   <include file="../../assets/shampoo/model3.xml"/>
-  <include file="../../assets/shampoo/model4.xml"/>
+  <!-- <include file="../../assets/shampoo/model4.xml"/> -->
   <!-- <include file="../../assets/shampoo/model5.xml"/>       -->
   <statistic center="0 0 1" extent="1.8"/>
   <visual>
@@ -91,7 +91,7 @@
 
 
 
-    <body name="table" pos="0.5 0 0.68">
+    <body name="table" pos="0.5 0 0.65">
       <!-- ── 桌面 ── -->
       <geom name="table_top"
             type="box"
