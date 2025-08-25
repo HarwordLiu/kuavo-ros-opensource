@@ -15,16 +15,18 @@ from utils.utils import Utils
 
 import rospy
 from std_msgs.msg import Bool
+from std_srvs.srv import Trigger, TriggerRequest, TriggerResponse
 
 class SimulatorTask1:
     def __init__(self):
         rospy.init_node('simulator_task1', anonymous=False)
 
-        self.pub_init = rospy.Publisher('/simulator/init', Bool, queue_size=10)
+        self.init_service = rospy.ServiceProxy('/simulator/init', Trigger)
         self.pub_success = rospy.Publisher('/simulator/success',Bool, queue_size=10)
 
-        rospy.Subscriber('/simulator/start', Bool, self._on_start)
-        rospy.Subscriber('/simulator/reset', Bool, self._on_reset)
+        # 将订阅者改为服务，等待外部信号
+        self.start_service = rospy.Service('/simulator/start', Trigger, self._on_start_service)
+        self.reset_service = rospy.Service('/simulator/reset', Trigger, self._on_reset_service)
 
         # 事件控制
         self.start_evt = threading.Event()
@@ -41,27 +43,32 @@ class SimulatorTask1:
         # 成功状态
         self.already_reported_success = False
 
-        # 区域阈值（你原注释内的范围）
+        # 区域阈值
         self.target_region = [
             (0.36, 0.62),   # x
             (-0.6, -0.32),  # y
             (0.85, 1.5)     # z
         ]
 
-    # ========== 回调 ==========
-    def _on_start(self, msg: Bool):
-        if msg.data:
-            rospy.loginfo("[sim] 收到 /simulator/start=True")
-            self.start_evt.set()
+    # ========== 服务回调 - 等待外部信号 ==========
+    def _on_start_service(self, req):
+        """等待外部代码发送 start 信号"""
+        rospy.loginfo("[sim] 收到外部 start 信号，开始执行任务")
+        self.start_evt.set()
+        return TriggerResponse(success=True, message="Task started successfully")
 
-    def _on_reset(self, msg: Bool):
-        if msg.data:
-            rospy.loginfo("[sim] 收到 /simulator/reset=True")
-            self.reset_evt.set()
+    def _on_reset_service(self, req):
+        """等待外部代码发送 reset 信号"""
+        rospy.loginfo("[sim] 收到外部 reset 信号，准备重置任务")
+        self.reset_evt.set()
+        return TriggerResponse(success=True, message="Task reset triggered")
 
     # ========== 主流程 ==========
     def run(self):
         try:
+            self.reset_evt.clear()
+            self.start_evt.clear()
+
             # 1) 初始化 SDK 与控制器
             if not KuavoSDK().Init(options=KuavoSDK.Options.WithIK):
                 print("Init KuavoSDK failed, exit!")
@@ -75,7 +82,7 @@ class SimulatorTask1:
             self.traj_ctrl     = TrajectoryController(self.robot)
             self.obj_pos       = ObjectPose()
 
-            # 随机化物体位置（可按需保留/删除）
+            # 随机化物体位置
             random_pos = ObjectRandomizer()
             result = random_pos.randomize_object_position(
                 object_name='box_grab',
@@ -104,13 +111,18 @@ class SimulatorTask1:
             self.traj_ctrl.execute_trajectory(q_list1, sleep_time=0.02)
             self.traj_ctrl.execute_trajectory(q_list2, sleep_time=0.02)
             self.traj_ctrl.execute_trajectory(q_list3, sleep_time=0.02)
-
+            
             # 3) 发布 msg0：init=True
-            rospy.loginfo("[sim] 预抓位完成，发布 /simulator/init=True")
-            self.pub_init.publish(Bool(data=True))
+            rospy.wait_for_service('/simulator/init')
+            try:
+                rospy.loginfo("[sim] 发布 /simulator/init 服务完成")
+                resp = self.init_service(TriggerRequest())
+            except rospy.ServiceException as e:
+                rospy.logerr(f"Service call failed: {e}")
 
-            # 4) 等待 msg1：start=True
-            rospy.loginfo("[sim] 等待 /simulator/start=True...")
+
+            # 4) 等待外部代码调用 start 服务
+            rospy.loginfo("[sim] 等待外部代码调用 /simulator/start 服务...")
             while not rospy.is_shutdown() and not self.reset_evt.is_set():
                 if self.start_evt.wait(timeout=0.1):
                     break
@@ -120,8 +132,8 @@ class SimulatorTask1:
                 self._cleanup()
                 sys.exit(0)
 
-            # 5) 收到 start → 开传送带，循环上报 success=False
-            rospy.loginfo("[sim] 开始传送带，持续上报 success=False")
+            # 5) 收到外部 start 信号 → 开传送带，循环上报 success
+            rospy.loginfo("[sim] 收到外部 start 信号，开始传送带，持续上报 success")
             self.conveyor_ctrl.control_speed(-0.1)
 
             rate = rospy.Rate(10)  # 10Hz 上报

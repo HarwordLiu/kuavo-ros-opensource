@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import sys
 import time
@@ -17,7 +16,7 @@ def run_task(task_id: int):
         print(f"[ERROR] 任务脚本不存在：{task_script}")
         sys.exit(1)
 
-    # === 核心：无限循环，直到用户 Ctrl+C 结束 ===
+    # === 无限循环，直到 Ctrl+C 结束 ===
     cycle_idx = 1
     while True:
         print(f"\n[INFO] === 第 {cycle_idx} 轮：启动仿真环境：{launch_file} ===")
@@ -30,7 +29,7 @@ def run_task(task_id: int):
 
         try:
             # 等仿真起来
-            time.sleep(2)
+            time.sleep(15)
 
             print(f"[INFO] 运行任务脚本：{task_script}")
             env = os.environ.copy()
@@ -39,7 +38,7 @@ def run_task(task_id: int):
             env['PYTHONPATH'] = PKG_ROOT + os.pathsep + env.get('PYTHONPATH', '')
 
             task_process = subprocess.Popen(['python3', task_script], env=env)
-            # 等到任务脚本**自然退出**（收到 /simulator/reset 后会自行退出）
+            # 等到任务脚本退出（收到 /simulator/reset 后会自行退出）
             task_process.wait()
             print("[INFO] 任务脚本退出，准备关闭仿真环境...")
 
@@ -49,7 +48,7 @@ def run_task(task_id: int):
             break
 
         finally:
-            # 优雅关闭仿真环境
+            # 关闭仿真环境
             try:
                 os.killpg(os.getpgid(launch_process.pid), signal.SIGTERM)
             except ProcessLookupError:
@@ -68,7 +67,7 @@ def main():
             pass
 
     while task_id not in [1, 2, 3, 4]:
-        print("========== 数据采集（精简版） ==========")
+        print("========== 模型推理 ==========")
         print("请选择任务编号（1-4）：")
         print("1: 任务1 —— 传送带物品分拣")
         print("2: 任务2 —— 传送带物品称重")

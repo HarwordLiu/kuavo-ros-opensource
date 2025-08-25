@@ -5,7 +5,6 @@ def launch_scene(scene_number):
     launch_file = f"load_kuavo_mujoco_sim{scene_number}.launch"
     command = f"roslaunch data_challenge_simulator {launch_file}"
     print(f"启动 {launch_file}...")
-    # 使用 Popen 启动场景，异步执行
     subprocess.Popen(command, shell=True)
 
 def launch_task(scene_number):

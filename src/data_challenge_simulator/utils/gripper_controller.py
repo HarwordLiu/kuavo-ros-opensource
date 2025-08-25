@@ -11,7 +11,6 @@ class GripperController:
         Args:
             publish_frequency (float): 命令发布频率 (Hz)，默认200Hz
         """
-        # 使用标准JointState消息和对应的话题名称
         self.gripper_cmd_pub = rospy.Publisher('/gripper/command', JointState, queue_size=10)
         self.gripper_state_sub = rospy.Subscriber('/gripper/state', JointState, self._state_callback)
         
@@ -19,7 +18,7 @@ class GripperController:
         self.current_left_cmd = 0.0
         self.current_right_cmd = 0.0
         
-        # 当前状态值 (0-0.8范围，从MuJoCo读取)
+        # 当前状态值 (0-0.8范围)
         self.current_left_position = 0.0
         self.current_right_position = 0.0
         
@@ -69,7 +68,6 @@ class GripperController:
                     msg.name = ["left_gripper_joint", "right_gripper_joint"]
                     msg.position = [self.current_left_cmd, self.current_right_cmd]
                     
-                    # 其他字段留空
                     msg.velocity = []
                     msg.effort = []
                 

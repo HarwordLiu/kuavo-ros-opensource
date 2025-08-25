@@ -1,4 +1,4 @@
-<mujoco model="shampoo2">
+<mujoco model="shampoo3">
   <asset>
     <texture type="2d" name="texture3" file="../../assets/shampoo/texture.png"/>
     <material name="material3_0" texture="texture3" specular="0.5" shininess="0.5"/>
@@ -39,39 +39,39 @@
   <worldbody>
     <body name="shampoo3" pos="0.35 -0.2 0.76" quat="0.5 0.5 0.5 0.5">
       <freejoint name="shampoo3"/>
-      <geom material="material3_0" mesh="model3" type="mesh" contype="0" conaffinity="0" group="2" mass="1e-4"/>
-      <geom mesh="model3_collision_0" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_1" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_2" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_3" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_4" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_5" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_6" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_7" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_8" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_9" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_10" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_11" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_12" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_13" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_14" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_15" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_16" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_17" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_18" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_19" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_20" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_21" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_22" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_23" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_24" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_25" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_26" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_27" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_28" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_29" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_30" type="mesh" group="3" mass="1e-4"/>
-      <geom mesh="model3_collision_31" type="mesh" group="3" mass="1e-4"/>
+      <geom material="material3_0" mesh="model3" type="mesh" contype="0" conaffinity="0" group="2" mass="1e-3"/>
+      <geom mesh="model3_collision_0" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_1" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_2" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_3" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_4" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_5" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_6" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_7" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_8" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_9" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_10" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_11" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_12" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_13" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_14" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_15" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_16" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_17" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_18" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_19" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_20" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_21" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_22" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_23" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_24" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_25" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_26" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_27" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_28" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_29" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_30" type="mesh" group="3" mass="1e-3"/>
+      <geom mesh="model3_collision_31" type="mesh" group="3" mass="1e-3"/>
     </body>
   </worldbody>
 </mujoco>

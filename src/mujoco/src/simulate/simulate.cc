@@ -615,8 +615,8 @@ protected:
 
   void RenderCameraView(int cam_id) {
     // 深度范围（你的 if/else 是同逻辑）
-    sim_->m_->vis.map.znear = 0.0001f;
-    sim_->m_->vis.map.zfar  = 100.0f;
+    sim_->m_->vis.map.znear = 0.02;
+    sim_->m_->vis.map.zfar  = 50;
 
     const int width = 640, height = 480;
 

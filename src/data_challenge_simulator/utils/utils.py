@@ -215,36 +215,74 @@ class Utils:
     def is_front_facing(
         quat_xyzw,
         *,
-        body_front_axis='x',              # 物体坐标系里“正面法线”是哪根轴：'x'/'y'/'z'
-        front_world_dir=np.array([-1,0,0]),  # 期望的“正面”在世界坐标系指向哪边，默认朝世界 -X
-        tol_deg=30.0                      # 允许的夹角阈值（度）
+        body_front_axis='x',          # 可为 'x'/'y'/'z' 或 '-x'/'-y'/'-z'
+        front_world_dir='-x',         # 可为 'x'/'y'/'z'/'-x'/'-y'/'-z' 或 3D 向量(np.array/list/tuple)
+        tol_deg=30.0
     ):
         """
-        返回 (is_front, angle_deg)
-        - is_front: 是否判定为“正面朝向”
-        - angle_deg: 正面法线与目标方向的夹角（度）
-        注意：只对“正面法线”方向做判断，绕法线的自旋不影响结果。
+        判定物体“正面法线”(由 body_front_axis 指定) 与期望世界方向 front_world_dir 的夹角是否 <= tol_deg。
+        - quat_xyzw: 四元数，顺序 **(x, y, z, w)**，与 SciPy 一致
+        - body_front_axis: 物体坐标系里的“正面法线”轴，可带负号
+        - front_world_dir: 期望的世界方向(字符串轴或3D向量)
+        - tol_deg: 角度阈值（度）
+        返回:
+            (is_front: bool, angle_deg: float)
         """
-        # 物体坐标系中的正面法线（单位向量）
-        if body_front_axis == 'x':
-            n_body = np.array([1,0,0], dtype=float)
-        elif body_front_axis == 'y':
-            n_body = np.array([0,1,0], dtype=float)
-        elif body_front_axis == 'z':
-            n_body = np.array([0,0,1], dtype=float)
+
+        def _axis_to_vec(axis_str: str) -> np.ndarray:
+            axis_str = axis_str.strip().lower()
+            table = {
+                'x':  np.array([ 1., 0., 0.]),
+                '-x': np.array([-1., 0., 0.]),
+                'y':  np.array([ 0., 1., 0.]),
+                '-y': np.array([ 0.,-1., 0.]),
+                'z':  np.array([ 0., 0., 1.]),
+                '-z': np.array([ 0., 0.,-1.]),
+            }
+            if axis_str not in table:
+                raise ValueError("axis must be one of: x, -x, y, -y, z, -z")
+            return table[axis_str]
+
+        # 1) 解析 body_front_axis 为局部单位向量
+        if isinstance(body_front_axis, str):
+            n_body = _axis_to_vec(body_front_axis)
         else:
-            raise ValueError("body_front_axis must be 'x'|'y'|'z'")
+            raise ValueError("body_front_axis must be a string axis like 'x', '-y', etc.")
 
-        # 将物体法线旋转到世界系
-        q = R.from_quat(quat_xyzw)  # 注意 SciPy 用的是 [x,y,z,w]
-        n_world = q.apply(n_body)
+        # 2) 解析 front_world_dir 为世界单位向量
+        if isinstance(front_world_dir, str):
+            fw = _axis_to_vec(front_world_dir)
+        else:
+            fw = np.asarray(front_world_dir, dtype=float)
+            if fw.shape != (3,):
+                raise ValueError("front_world_dir vector must be shape (3,)")
+            n = np.linalg.norm(fw)
+            if n < 1e-12:
+                raise ValueError("front_world_dir vector norm is zero")
+            fw = fw / n
 
-        # 与期望方向的夹角
-        fw = np.array(front_world_dir, dtype=float)
-        fw /= np.linalg.norm(fw)
-        n_world /= np.linalg.norm(n_world)
+        # 3) 归一化四元数并构造旋转 (SciPy 使用 xyzw)
+        q = np.asarray(quat_xyzw, dtype=float)
+        if q.shape != (4,):
+            raise ValueError("quat_xyzw must be length-4 (x, y, z, w)")
+        nq = np.linalg.norm(q)
+        if nq < 1e-12:
+            # 退化情形：视为单位四元数
+            q = np.array([0., 0., 0., 1.], dtype=float)
+        else:
+            q = q / nq
 
+        Rw = R.from_quat(q)
+
+        # 4) 将局部“正面法线”旋转到世界系
+        n_world = Rw.apply(n_body)
+        n = np.linalg.norm(n_world)
+        if n < 1e-12:
+            # 极小概率的数值异常，直接返回 False, 180°
+            return False, 180.0
+        n_world = n_world / n
+
+        # 5) 计算夹角并判定
         cosang = float(np.clip(np.dot(n_world, fw), -1.0, 1.0))
         angle = math.degrees(math.acos(cosang))
-
         return (angle <= tol_deg), angle

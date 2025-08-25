@@ -387,6 +387,8 @@ class KuavoRobotStateCore:
                         for callback in self._gait_changed_callbacks:
                             callback(curr_time, current_gait)
         except Exception as e:
+
+
             SDKLogger.error(f"Error processing MPC observation: {e}")
 
     def _srv_get_arm_ctrl_mode(self)-> KuavoArmCtrlMode:

@@ -6,7 +6,7 @@ import numpy as np
 
 class TrajectoryController:
     """
-    高频轨迹控制器 - 持续以指定频率发布当前目标关节角度
+    轨迹控制器 - 持续以指定频率发布当前目标关节角度
     """
     
     def __init__(self, robot, publish_frequency=200.0):
