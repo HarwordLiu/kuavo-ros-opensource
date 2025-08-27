@@ -2,14 +2,6 @@
 
 ## 开源仓库
 ```shell
-# GitHub (推荐)
-# https
-git clone https://github.com/leju-robot/kuavo-ros-opensource.git
-
-# ssh
-git clone git@github.com:leju-robot/kuavo-ros-opensource.git
-
-# Gitee (镜像)
 # https
 git clone https://gitee.com/leju-robot/kuavo-ros-opensource.git
 
