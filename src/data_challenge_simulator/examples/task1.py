@@ -32,13 +32,24 @@ def main():
     obj_pos = ObjectPose()
     num = 20
 
+    target_region = [
+        (0.44, 0.58),   # x 范围
+        (-0.52, -0.38),   # y 范围
+        (0.85, 1.0)  # z 范围
+    ]
+    grasp_region = [
+        (0.38, 0.52),   # x 范围
+        (-0.1, 0.04),   # y 范围
+        (0.85, 1.0)  # z 范围
+    ]
+
     try:
         # 随机物体位置
         random_pos = ObjectRandomizer()
         result = random_pos.randomize_object_position(
             object_name='box_grab',
             position_ranges={
-                'x': [0.8, 0.8],    # x轴范围
+                'x': [0.8, 1.0],    # x轴范围
                 'y': [0.45, 0.65],   # y轴范围  
                 'z': [0.95, 0.95]     # z轴范围
             }
@@ -99,7 +110,7 @@ def main():
         # 使用高频轨迹控制器
         traj_ctrl.execute_trajectory(q_list_target, sleep_time=0.02)
 
-        time.sleep(2.5)
+        time.sleep(4.0)
         gripper_ctrl.control_left_gripper(140)  # 高频发布
         time.sleep(0.5)
 
@@ -122,11 +133,25 @@ def main():
         gripper_ctrl.control_left_gripper(0)  # 高频发布
         time.sleep(0.5)
 
+        # 判定是否正确翻面以及是否在区域内
+        all_success = True
+
+        pos1 = obj_pos.get_position("box_grab")
+        ori1 = obj_pos.get_orientation("box_grab")
+        in_region1 = Utils.is_in_target_region(pos1, grasp_region)
+        is_front1, deg1  = Utils.is_front_facing(quat_xyzw=ori1,body_front_axis='z',front_world_dir='z',tol_deg=20)
+
+        if not (in_region1 and is_front1):
+            all_success = False
+            print("第一次失败❌")
+        elif in_region1 and is_front1:
+            print("第一次成功✅")
+
         # 右臂动作
-        q_target7 = [-40, -25, -10, -90, -160, 0, -10,     15, 0, 20, -140, 90, 0, 0]
+        q_target7 = [-10, 5, 0, -95, -180, 25, -20,     15, 0, 20, -140, 90, 0, 0]
         q_list7 = Utils.interpolate_joint_trajectory(q_target7, q_target6, num=num)
 
-        q_target8 = [-50, 0, 0, -70, 100, 0, -10,         10, 0, 20, -110, 90, 0, -15]
+        q_target8 = [-10, 5, 0, -95, -180, 25, -20,         10, 0, 20, -110, 90, 0, -15]
         q_list8 = Utils.interpolate_joint_trajectory(q_target8, q_target7, num=num)
 
         # 使用高频轨迹控制器
@@ -139,7 +164,7 @@ def main():
         curr_q1 = robot_state.arm_joint_state().position
         l_pose1, r_pose1 = robot.arm_fk(curr_q1)
         pos_box1 = obj_pos.get_position("box_grab")
-        r_pose_new1 = [pos_box1[0]+0.05, pos_box1[1]+0.05, r_pose1.position[2] + robot_state.robot_position()[2]+0.1]
+        r_pose_new1 = [pos_box1[0]+0.06, pos_box1[1]+0.06, r_pose1.position[2] + robot_state.robot_position()[2]+0.1]
         _, pose1_right = Utils.compute_pose(
             robot,
             robot_state,
@@ -149,7 +174,7 @@ def main():
         )
         
         pose1_left1 = [math.radians(x) for x in q_target8[0:7]]
-        q_target1 = [0,0,0,0,0,0,0] + pose1_right
+        q_target1 = pose1_left1 + pose1_right
         q_target_deg1 = [math.degrees(x) for x in q_target1]
         q_list_target1 = Utils.interpolate_joint_trajectory(q_target_deg1, q_target8, num=num)
         
@@ -161,28 +186,36 @@ def main():
         time.sleep(0.5)
 
         # 最后的动作
-        q_target10 = [-0, 0, 0, 0, 0, 0, 0,                -45, 0, 30, -100, 90, 0, 0]
+        q_target10 = [-10, 5, 0, -95, -180, 25, -20,                -45, 0, 30, -100, 90, 0, 0]
         q_list10 = Utils.interpolate_joint_trajectory(q_target10, q_target_deg1, num=num)
 
-        q_target11 = [0, 0, 0, 0, 0, 0, 0,                -35, 0, -25, -90, 90, 0, 0]
+        q_target11 = [-10, 5, 0, -95, -180, 25, -20,                -35, 0, -25, -90, 90, 0, 0]
         q_list11 = Utils.interpolate_joint_trajectory(q_target11, q_target10, num=num)
 
+        q_target12 = [-10, 5, 0, -95, -180, 25, -20,                30, 0, 0, -140, 90, 0, 0]
+        q_list12 = Utils.interpolate_joint_trajectory(q_target12, q_target11, num=num)
         # 使用高频轨迹控制器
         traj_ctrl.execute_trajectory(q_list10, sleep_time=0.02)
         traj_ctrl.execute_trajectory(q_list11, sleep_time=0.02)
-        
+       
         time.sleep(0.5)
         gripper_ctrl.control_right_gripper(0)  # 高频发布
         time.sleep(0.5)
+        traj_ctrl.execute_trajectory(q_list12, sleep_time=0.02)
+        # 检查任务完成情况
+        pos2 = obj_pos.get_position("box_grab")
+        ori2 = obj_pos.get_orientation("box_grab")
+        in_region2 = Utils.is_in_target_region(pos2, target_region)
+        is_front2,deg2  = Utils.is_front_facing(quat_xyzw=ori2,body_front_axis='z',front_world_dir='z',tol_deg=20)
+
+        if not (in_region2 and is_front2):
+            all_success = False
+            print("第二次失败❌")
+        elif in_region2 and is_front2:
+            print("第二次成功✅")
 
         # 检查任务完成情况
-        pos = obj_pos.get_position("box_grab")
-        target_region = [
-            (0.36, 0.62),   # x 范围
-            (-0.6, -0.32),   # y 范围
-            (0.85, 1.5)  # z 范围
-        ]
-        if Utils.is_in_target_region(pos, target_region):
+        if all_success:
             print("\033[92m✅ 任务成功\033[0m")
             with open("task_result.txt", "w") as f:
                 f.write("success")

@@ -149,26 +149,48 @@
             material="table_ceramic"      
             friction="1 0.005 0.0001"/>
 
-      <!-- marker -->
-      <geom name="marker1_1" type="box" size="0.01 0.14 0.001"
+      <!-- marker1 -->
+      <geom name="marker1_1" type="box" size="0.01 0.07 0.001"
             rgba="1 0 0 1"
-            pos="-0.08 0.13 0.021"
+            pos="-0.12 0.15 0.021"
             contype="0" conaffinity="0"/>
 
-      <geom name="marker1_2" type="box" size="0.14 0.01 0.001"
+      <geom name="marker1_2" type="box" size="0.07 0.01 0.001"
             rgba="1 0 0 1"
-            pos="-0.21 0.28 0.021"
+            pos="-0.19 0.22 0.021"
             contype="0" conaffinity="0"/>
 
-      <geom name="marker1_3" type="box" size="0.01 0.14 0.001"
+      <geom name="marker1_3" type="box" size="0.01 0.07 0.001"
             rgba="1 0 0 1"
-            pos="-0.34 0.13 0.021"
+            pos="-0.26 0.15 0.021"
             contype="0" conaffinity="0"/>
 
-      <geom name="marker1_4" type="box" size="0.14 0.01 0.001"
+      <geom name="marker1_4" type="box" size="0.07 0.01 0.001"
             rgba="1 0 0 1"
-            pos="-0.21 0 0.021"
+            pos="-0.19 0.08 0.021"
             contype="0" conaffinity="0"/>
+
+      <!-- marker2 -->      
+      <geom name="marker2_1" type="box" size="0.01 0.07 0.001"
+            rgba="1 0 0 1"
+            pos="-0.18 0.57 0.021"
+            contype="0" conaffinity="0"/>
+
+      <geom name="marker2_2" type="box" size="0.07 0.01 0.001"
+            rgba="1 0 0 1"
+            pos="-0.25 0.64 0.021"
+            contype="0" conaffinity="0"/>
+
+      <geom name="marker2_3" type="box" size="0.01 0.07 0.001"
+            rgba="1 0 0 1"
+            pos="-0.32 0.57 0.021"
+            contype="0" conaffinity="0"/>
+
+      <geom name="marker2_4" type="box" size="0.07 0.01 0.001"
+            rgba="1 0 0 1"
+            pos="-0.25 0.50 0.021"
+            contype="0" conaffinity="0"/>
+
       <!-- ── 桌腿 ── -->
       <geom name="leg_fl" type="cylinder"
             size="0.03 0.4"               

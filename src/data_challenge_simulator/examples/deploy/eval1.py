@@ -12,10 +12,11 @@ from utils.object_pos import ObjectPose
 from utils.object_randomizer import ObjectRandomizer
 from utils.trajectory_controller import TrajectoryController
 from utils.utils import Utils
-
+from utils.evaluator import ScoringEvaluator, ScoringConfig
 import rospy
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Int32
 from std_srvs.srv import Trigger, TriggerRequest, TriggerResponse
+import numpy as np
 
 class SimulatorTask1:
     def __init__(self):
@@ -23,8 +24,8 @@ class SimulatorTask1:
 
         self.init_service = rospy.ServiceProxy('/simulator/init', Trigger)
         self.pub_success = rospy.Publisher('/simulator/success',Bool, queue_size=10)
-
-        # 将订阅者改为服务，等待外部信号
+        self.pub_score   = rospy.Publisher('/simulator/score', Int32, queue_size=10, latch=True)
+        # 等待外部信号
         self.start_service = rospy.Service('/simulator/start', Trigger, self._on_start_service)
         self.reset_service = rospy.Service('/simulator/reset', Trigger, self._on_reset_service)
 
@@ -39,21 +40,50 @@ class SimulatorTask1:
         self.gripper_ctrl = None
         self.traj_ctrl = None
         self.obj_pos = None
-
+        self.score = 0
+        default_score_file = "/tmp/simulator_score_last.txt"
+        self.score_file = os.environ.get("SCORE_FILE", default_score_file)
         # 成功状态
+        self.started = False
         self.already_reported_success = False
-
+        self.intermediate_awarded = False
         # 区域阈值
         self.target_region = [
             (0.36, 0.62),   # x
             (-0.6, -0.32),  # y
-            (0.85, 1.5)     # z
+            (0.85, 1.0)     # z
+        ]
+        self.intermediate_region = [
+            (0.38, 0.52),   # x 范围
+            (-0.1, 0.04),   # y 范围
+            (0.85, 1.0)  # z 范围
         ]
 
+        self.evaluator = ScoringEvaluator(
+            ScoringConfig(
+                target_region=self.target_region,
+                intermediate_region=self.intermediate_region,
+                body_front_axis='z',
+                front_world_dir='z',
+                tol_deg=10.0,
+                success_base=40,
+                time_full=20,
+                time_threshold_sec=10,
+                time_penalty_per_sec=2,
+                intermediate_bonus=40,
+            ),
+            is_in_region_fn=lambda pos, region: Utils.is_in_target_region(pos, region),
+            is_front_facing_fn=lambda quat_xyzw, body_front_axis, front_world_dir, tol_deg:
+                Utils.is_front_facing(quat_xyzw=quat_xyzw,
+                                    body_front_axis=body_front_axis,
+                                    front_world_dir=front_world_dir,
+                                    tol_deg=tol_deg)
+        )
     # ========== 服务回调 - 等待外部信号 ==========
     def _on_start_service(self, req):
         """等待外部代码发送 start 信号"""
         rospy.loginfo("[sim] 收到外部 start 信号，开始执行任务")
+        self.started = True
         self.start_evt.set()
         return TriggerResponse(success=True, message="Task started successfully")
 
@@ -62,6 +92,16 @@ class SimulatorTask1:
         rospy.loginfo("[sim] 收到外部 reset 信号，准备重置任务")
         self.reset_evt.set()
         return TriggerResponse(success=True, message="Task reset triggered")
+
+    def _sample_position_with_seed(self, seed: int, position_ranges: dict):
+        """
+        使用固定种子采样位置，返回 (x, y, z)
+        """
+        rng = np.random.default_rng(int(seed))
+        x = float(rng.uniform(*position_ranges['x']))
+        y = float(rng.uniform(*position_ranges['y']))
+        z = float(rng.uniform(*position_ranges['z']))
+        return x, y, z
 
     # ========== 主流程 ==========
     def run(self):
@@ -78,24 +118,20 @@ class SimulatorTask1:
             self.robot_state = KuavoRobotState()
 
             self.conveyor_ctrl = ConveyorController()
-            self.gripper_ctrl  = GripperController()
-            self.traj_ctrl     = TrajectoryController(self.robot)
             self.obj_pos       = ObjectPose()
 
             # 随机化物体位置
-            random_pos = ObjectRandomizer()
-            result = random_pos.randomize_object_position(
-                object_name='box_grab',
-                position_ranges={
-                    'x': [0.8, 0.8],
+            obj_pos = ObjectRandomizer()
+            x, y, z = self._sample_position_with_seed(seed=42,position_ranges={
+                    'x': [0.8, 1.0],
                     'y': [0.45, 0.65],
                     'z': [0.95, 0.95]
-                }
+                })
+            
+            result = obj_pos.set_object_position(
+                object_name='box_grab',
+                position = {"x":x, "y":y, "z":z}
             )
-            if result['success']:
-                rospy.loginfo(f"物体随机化成功: {result['final_position']}")
-            else:
-                rospy.logwarn(f"物体随机化失败: {result['message']}")
 
             # 2) 预抓位
             num = 20
@@ -108,9 +144,15 @@ class SimulatorTask1:
             q_target3 = [-10, 15, 25, -95, -180, 25, -20,   30, 0, 0, -140, 90, 0, 0]
             q_list3 = Utils.interpolate_joint_trajectory(q_target3, q_target2, num=num)
 
-            self.traj_ctrl.execute_trajectory(q_list1, sleep_time=0.02)
-            self.traj_ctrl.execute_trajectory(q_list2, sleep_time=0.02)
-            self.traj_ctrl.execute_trajectory(q_list3, sleep_time=0.02)
+            for q in q_list1 :
+                self.robot.control_arm_joint_positions(q)
+                time.sleep(0.02)
+            for q in q_list2:
+                self.robot.control_arm_joint_positions(q)
+                time.sleep(0.02)
+            for q in q_list3:
+                self.robot.control_arm_joint_positions(q)
+                time.sleep(0.02)
             
             # 3) 发布 msg0：init=True
             rospy.wait_for_service('/simulator/init')
@@ -138,28 +180,51 @@ class SimulatorTask1:
 
             rate = rospy.Rate(10)  # 10Hz 上报
             self.already_reported_success = False
-
+            start_time = time.time()  # 循环开始前计时
+            self.evaluator.reset(start_time=start_time)
+            
             while not rospy.is_shutdown() and not self.reset_evt.is_set():
-                # 检查是否成功
                 try:
-                    pos = self.obj_pos.get_position("box_grab")  # [x, y, z]
-                    in_region = Utils.is_in_target_region(pos, self.target_region)
+                    pos = self.obj_pos.get_position("box_grab")
+                    ori = self.obj_pos.get_orientation("box_grab")
                 except Exception as e:
-                    rospy.logwarn(f"[sim] 获取位置出错：{e}")
-                    in_region = False
+                    rospy.logwarn(f"[sim] 获取位置/姿态出错：{e}")
+                    pos, ori = None, None
 
-                if in_region and not self.already_reported_success:
+                if pos is None or ori is None:
+                    # 取不到传感就当未成功
+                    # 未成功阶段持续发 False
+                    self.pub_success.publish(Bool(data=False))
+                    # 持续发布分数
+                    self.pub_score.publish(Int32(data=self.evaluator.score))
+                    rate.sleep()
+                    continue
+
+                # 调用通用评估器
+                out = self.evaluator.evaluate(pos, ori, now=time.time())
+
+                # 按评估器的“建议标志”做 ROS 行为
+                if out["need_publish_success_true"]:
                     rospy.loginfo("[sim] ✅ 任务成功，发布 /simulator/success=True")
                     self.pub_success.publish(Bool(data=True))
-                    self.already_reported_success = True
-                    # 成功就停止传送带
-                    self.conveyor_ctrl.control_speed(0.0)
-                else:
-                    # 未成功则持续发 False
-                    if not self.already_reported_success:
-                        self.pub_success.publish(Bool(data=False))
+
+                elif out["need_publish_success_false"]:
+                    self.pub_success.publish(Bool(data=False))
+
+                if out["intermediate_triggered"]:
+                    rospy.loginfo(f"[sim] 🟡 中间点达成，加分 {self.evaluator.cfg.intermediate_bonus}，当前总分: {out['total_score']}")
+
+                if out["success_triggered"]:
+                    rospy.loginfo(f"[sim] 用时 {out['elapsed_sec']:.2f}s，本次加分 {out['score_delta']}，总分 {out['total_score']}")
+                    # 停止传送带
+                    if out["need_stop_conveyor"]:
+                        self.conveyor_ctrl.control_speed(0.0)
+
+                # 持续发布当前分数
+                self.score = out["total_score"]
 
                 rate.sleep()
+
 
             # 6) 收到 reset → 清理并退出 (让 deploy.py 重启新一轮)
             rospy.loginfo("[sim] 收到 reset/shutdown，开始清理并退出")
@@ -183,15 +248,20 @@ class SimulatorTask1:
         except Exception:
             pass
         try:
-            if self.gripper_ctrl:
-                self.gripper_ctrl.stop()
-        except Exception:
-            pass
-        try:
             if self.traj_ctrl:
                 self.traj_ctrl.stop()
         except Exception:
             pass
+        if self.started:   # self.started 在 _on_start_service 里置 True
+            try:
+                os.makedirs(os.path.dirname(self.score_file), exist_ok=True)
+                with open(self.score_file, "w") as f:
+                    f.write(f"{int(self.score)}\n")
+                rospy.loginfo(f"[sim] 本轮最终得分已写入: {self.score_file}（得分={int(self.score)}）")
+            except Exception as e:
+                rospy.logwarn(f"[sim] 写入最终得分失败: {e}")
+        else:
+            rospy.loginfo("[sim] 本轮未触发 start，不写入得分文件。")
 
 if __name__ == "__main__":
     task = SimulatorTask1()
