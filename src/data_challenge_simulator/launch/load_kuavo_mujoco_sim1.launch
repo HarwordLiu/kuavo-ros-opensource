@@ -8,7 +8,7 @@
     <arg name="output_system_info" default="true"/>
     <arg name="vr_remote_control" default="false"/>
     <arg name="robot_type"         default="humanoid"/>
-    <arg name="rviz"                default="true" />
+    <arg name="rviz"                default="false" />
     <arg name="multiplot"          default="false"/>
     <arg name="robot_version"      default="$(optenv ROBOT_VERSION 40)"/>
     <!-- load the robot version manager -->
@@ -89,8 +89,9 @@
     </group>
     <!-- <group unless="$(arg use_joystick)"> -->
 
-      <node pkg="humanoid_interface_ros" type="humanoid_gait_command" name="humanoid_gait_command"
-            output="screen" launch-prefix="gnome-terminal --disable-factory --"/>
+    <node pkg="humanoid_interface_ros" type="humanoid_gait_command" name="humanoid_gait_command"
+      launch-prefix="nohup" output="log"/>
+
     <!-- </group> -->
 
     <node pkg="humanoid_interface_ros" type="humanoid_hand_control" name="humanoid_hand_control" output="screen" launch-prefix="$(find humanoid_controllers)/scripts/start_node.sh $(arg with_coredump)"/>
@@ -123,7 +124,7 @@
         </include>
       </group>
       <group if="$(eval arg('joystick_type') == 'sim')">
-        <include file="$(find humanoid_controllers)/launch/joy/joy_control_sim.launch">
+        <include file="$(find data_challenge_simulator)/launch/joy_control_sim.launch">
           <arg name="joystick_type" value="$(arg joystick_type)"/>
         </include>
       </group>
