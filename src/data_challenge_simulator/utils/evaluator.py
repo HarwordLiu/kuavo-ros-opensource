@@ -34,12 +34,16 @@ class ScoringEvaluator:
 
         self.score: int = 0
         self.already_reported_success: bool = False
+        self.intermediate_pos_awarded: bool = False
+        self.intermediate_ori_awarded: bool = False
         self.intermediate_awarded: bool = False
         self.start_time: float = time.time()
 
     def reset(self, start_time: Optional[float] = None):
         self.score = 0
         self.already_reported_success = False
+        self.intermediate_pos_awarded = False
+        self.intermediate_ori_awarded = False
         self.intermediate_awarded = False
         self.start_time = time.time() if start_time is None else start_time
 
@@ -74,6 +78,11 @@ class ScoringEvaluator:
             "score_delta": 0,
             "total_score": self.score,
             "elapsed_sec": now - self.start_time,
+            "intermediate_pos_added": False,
+            "intermediate_ori_added": False,
+            "success_pos_added": 0,   # 30 或 0
+            "success_ori_added": 0,   # 10 或 0
+            "time_score_added": 0,    # 时间分
         }
 
         try:
@@ -97,11 +106,31 @@ class ScoringEvaluator:
         result["front_deg"] = deg2
 
         # —— 中间点一次性加分 —— #
-        if in_intermediate and is_front and (not self.intermediate_awarded):
-            self.intermediate_awarded = True
-            self.score += self.cfg.intermediate_bonus
-            result["intermediate_triggered"] = True
-            result["score_delta"] += self.cfg.intermediate_bonus
+        # —— 中间点分项一次性加分：位置30 + 方向10 —— #
+        # 规则：必须“在中间区域 in_intermediate”时才考虑加分；
+        #       位置分：第一次检测到 in_intermediate 即加 30 分（只加一次）；
+        #       方向分：在 in_intermediate 且 is_front 为真时，加 10 分（只加一次）。
+        if in_intermediate:
+            # 位置30分（只加一次）
+            if not self.intermediate_pos_awarded:
+                self.intermediate_pos_awarded = True
+                self.score += 30
+                result["score_delta"] += 30
+                result["intermediate_triggered"] = True  # 本帧有中间点得分事件
+                result["intermediate_pos_added"] = True
+
+            # 方向10分（只加一次，且仅当朝向正确）
+            if is_front and not self.intermediate_ori_awarded:
+                self.intermediate_ori_awarded = True
+                self.score += 10
+                result["score_delta"] += 10
+                result["intermediate_triggered"] = True
+                result["intermediate_ori_added"] = True
+
+            # 当两个子项都拿到时，标记“中间点完成”（用于兼容原字段/上层逻辑）
+            if self.intermediate_pos_awarded and self.intermediate_ori_awarded:
+                self.intermediate_awarded = True
+
 
         # —— 终点成功 —— #
         if in_region and is_front and (not self.already_reported_success):
@@ -111,8 +140,13 @@ class ScoringEvaluator:
             result["need_stop_conveyor"] = True
 
             # 终点基础分
-            self.score += self.cfg.success_base
-            result["score_delta"] += self.cfg.success_base
+            pos_score = 30 if in_region else 0
+            ori_score = 10 if is_front else 0
+            base_score = pos_score + ori_score
+            self.score += base_score
+            result["score_delta"] += base_score
+            result["success_pos_added"] = pos_score
+            result["success_ori_added"] = ori_score
 
             # 时间分
             elapsed = now - self.start_time
@@ -125,6 +159,7 @@ class ScoringEvaluator:
             self.score += time_score
             result["score_delta"] += time_score
             result["elapsed_sec"] = elapsed
+            result["time_score_added"] = int(time_score)
         else:
             # 未成功阶段建议持续发 False
             if not self.already_reported_success:

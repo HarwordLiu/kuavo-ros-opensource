@@ -73,6 +73,13 @@ def main():
     randomizer.randomize_multiple_objects(object_configs)
     obj1 = back_objects[0]
     obj2 = back_objects[1]
+    obj3 = front_objects[0]
+
+    target_region = [
+        (0.16, 0.50),
+        (0.21, 0.58),
+        (0.6, 1.00),
+    ]
 
     try:
         robot.control_head(yaw=0, pitch=math.radians(12))
@@ -90,8 +97,8 @@ def main():
         traj_ctrl.execute_trajectory(q1_list2, sleep_time=0.02)
         time.sleep(0.5)
 
-        ## 抓取第一个物体
-        # 先到达正上方
+        # ## 抓取第一个物体
+        # # 先到达正上方
         curr_q1 = robot_state.arm_joint_state().position
         l_pose1, r_pose1 = robot.arm_fk(curr_q1)
         pos_obj1 = obj_pos.get_position(obj1)
@@ -152,13 +159,11 @@ def main():
         q1_target5 = [-30, 20, -35, -100, -40, -10, -70,   -12, 10, 30, -80, 110, -10, -70]
         q1_list5 = Utils.interpolate_joint_trajectory(q1_target5,q1_target4, num = num) 
             
-        # q1_target6 = [-50, 20, -50, -120, -40, -30, -70,   60, 0, 10, -100, 110, 10, 0]
-        # q1_list6 = Utils.interpolate_joint_trajectory(q1_target6, q1_target5, num = num)
             
-        q1_target7 = [-10, 3, 3, -80, -150, -50, -50,   70, 0, 0, -135, 70, 40, 0]
+        q1_target7 = [-10, 0, 0, -70, -120, -50, -10,   70, 0, 0, -135, 70, 40, 0]
         q1_list7 = Utils.interpolate_joint_trajectory(q1_target7, q1_target5, num = num)
 
-        q1_target8 = [10, 0, 0, -130, 70, 0, 0,   70, 0, 0, -135, 70, 40, 0]
+        q1_target8 = [30, 0, 0, -140, -90, 0, 0,   70, 0, 0, -135, 70, 40, 0]
         q1_list8 = Utils.interpolate_joint_trajectory(q1_target8, q1_target7, num = num)
 
         print("第一个物体翻面操作")
@@ -177,7 +182,6 @@ def main():
         gripper_ctrl.control_right_gripper(0)
 
         traj_ctrl.execute_trajectory(q1_list5, sleep_time=0.02)
-        # traj_ctrl.execute_trajectory(q1_list6, sleep_time=0.02)
         traj_ctrl.execute_trajectory(q1_list7, sleep_time=0.02)
         
         print("放置于目标区域")
@@ -194,14 +198,8 @@ def main():
         pos1 = obj_pos.get_position(obj1)
         ori1 = obj_pos.get_orientation(obj1)
 
-        target_region = [
-            (0.16, 0.50),
-            (0.21, 0.58),
-            (0.6, 1.00),
-        ]
-
         in_region1 = Utils.is_in_target_region(pos1, target_region)
-        is_front1, deg1  = Utils.is_front_facing(quat_xyzw=ori1,body_front_axis='-y',front_world_dir='z',tol_deg=20)
+        is_front1, deg1  = Utils.is_front_facing(quat_xyzw=ori1,body_front_axis='-y',front_world_dir='z',tol_deg=10)
 
         if not (in_region1 and is_front1):
             all_success = False
@@ -209,8 +207,8 @@ def main():
         elif in_region1 and is_front1:
             print("第一次成功✅")
 
-        ### 抓取第二个反面物体
-        ##  到达预抓位 - 使用高频轨迹控制器
+        # ### 抓取第二个反面物体
+        # ##  到达预抓位 - 使用高频轨迹控制器
         q2_target1 = [10, 0, 0, -130, 70, 0, 0,   70, 0, 0, -135, 70, 40, 0]
         q2_list1 = Utils.interpolate_joint_trajectory(q2_target1,q1_target8, num = num) 
             
@@ -286,7 +284,7 @@ def main():
         q2_target6 = [-50, 20, -10, -80, -90, 0, -70,   60, 0, 10, -100, 110, 10, 0]
         q2_list6 = Utils.interpolate_joint_trajectory(q2_target6, q2_target5, num = num)
             
-        q2_target7 = [-10, 15, 15, -70, -150, -50, -60,   0, 0, 0, 0, 0, 0, 0]
+        q2_target7 = [-10, 10, 15, -70, -150, -50, -60,   70, 0, 0, -135, 70, 40, 0]
         q2_list7 = Utils.interpolate_joint_trajectory(q2_target7, q2_target6, num = num)
 
         print("第二个物体翻面操作")
@@ -319,7 +317,7 @@ def main():
         ori2 = obj_pos.get_orientation(obj2)
 
         in_region2 = Utils.is_in_target_region(pos2, target_region)
-        is_front2,deg2  = Utils.is_front_facing(quat_xyzw=ori2,body_front_axis='-y',front_world_dir='z',tol_deg=20)
+        is_front2,deg2  = Utils.is_front_facing(quat_xyzw=ori2,body_front_axis='-y',front_world_dir='z',tol_deg=10)
 
         if not (in_region2 and is_front2):
             all_success = False
@@ -327,6 +325,121 @@ def main():
         elif in_region2 and is_front2:
             print("第二次成功✅")
         
+
+
+        ### 抓取第一个正面物体
+        ##  到达预抓位 - 使用高频轨迹控制器
+        q3_target1 = [30, 0, 0, -140, -90, 0, 0,   70, 0, 0, -135, 70, 40, 0]
+        q3_list1 = Utils.interpolate_joint_trajectory(q3_target1,q2_target7, num = num) 
+            
+        q3_target2 = [30, 0, 0, -140, -90, 0, 0,   10, 5, 0, -130, 90, 90, 0]
+        q3_list2 = Utils.interpolate_joint_trajectory(q3_target2, q3_target1, num = num)
+
+        print("移动到第三个物体预抓位")
+        # 使用高频轨迹控制器
+        traj_ctrl.execute_trajectory(q3_list1, sleep_time=0.02)
+        traj_ctrl.execute_trajectory(q3_list2, sleep_time=0.02)
+        time.sleep(0.5)
+
+        # 先到达正上方
+        curr_q3 = robot_state.arm_joint_state().position
+        l_pose3, r_pose3 = robot.arm_fk(curr_q3)
+        pos_obj3 = obj_pos.get_position(obj3)
+        offset3_x = 0.07
+        offset3_y = -0.016
+        offset3_z = 0.03
+        r_pose3_new1 = [pos_obj3[0], pos_obj3[1], pos_obj3[2]+offset3_z+0.1]
+        r_pose3_new2 = [pos_obj3[0]+offset3_x, pos_obj3[1]+offset3_y, pos_obj3[2]+offset3_z] 
+
+        [], pose3_right1= Utils.compute_pose(
+            robot,
+            robot_state,
+            mode="right",
+            pos_right=r_pose3_new1,
+            quat_right=r_pose3.orientation,
+        )
+        
+        pose3_left = [math.radians(x) for x in q3_target2[0:7]]
+        q_obj3_1 = pose3_left+pose3_right1
+        q_obj3_deg_1 = [math.degrees(x) for x in q_obj3_1]
+        q_list_obj3_1 = Utils.interpolate_joint_trajectory(q_obj3_deg_1, q3_target2, num = num)
+        
+        print("移动到第一个物体正上方")
+        traj_ctrl.execute_trajectory(q_list_obj3_1, sleep_time=0.02)
+        time.sleep(0.5)
+        
+        # 再下去抓
+        curr_q3_2 = robot_state.arm_joint_state().position
+        l_pose3_2, r_pose3_2 = robot.arm_fk(curr_q3_2)
+        [], pose3_right2= Utils.compute_pose(
+            robot,
+            robot_state,
+            mode="right",
+            pos_right=r_pose3_new2,
+            quat_right=r_pose3_2.orientation,
+        )
+        
+        pose3_left = [math.radians(x) for x in q3_target2[0:7]]
+        q_obj3_2 = pose3_left+pose3_right2
+        q_obj3_deg_2 = [math.degrees(x) for x in q_obj3_2]
+        q_list_obj3_2 = Utils.interpolate_joint_trajectory(q_obj3_deg_2, q_obj3_deg_1, num = num)
+
+        print("下降到第一个物体抓取位置")
+        traj_ctrl.execute_trajectory(q_list_obj3_2, sleep_time=0.02)
+
+        time.sleep(0.5)
+        # 右夹爪抓取 - 高频发布
+        gripper_ctrl.control_right_gripper(130)
+        time.sleep(0.5)
+
+        q3_target3 = [-50, 20, -75, -100, -90, -60, 0,   -50, -20, 90, -110, 90, 80, 25]
+        q3_list3 = Utils.interpolate_joint_trajectory(q3_target3,q_obj3_deg_1, num = 30) 
+            
+        q3_target4 = [-50, 5, -80, -90, -90, -50, 0,   -50, -15, 90, -110, 90, 80, 25]
+        q3_list4 = Utils.interpolate_joint_trajectory(q3_target4, q3_target3, num = 30)
+
+        traj_ctrl.execute_trajectory(q3_list3, sleep_time=0.02)
+        time.sleep(0.5)
+        traj_ctrl.execute_trajectory(q3_list4, sleep_time=0.02)
+
+        time.sleep(0.5)
+        # 右夹爪抓取 - 高频发布
+        gripper_ctrl.control_left_gripper(130)
+        gripper_ctrl.control_right_gripper(130)
+        time.sleep(0.5)
+
+        gripper_ctrl.control_left_gripper(130)
+        gripper_ctrl.control_right_gripper(0)
+        time.sleep(0.5)
+
+        q3_target5 = [-50, 20, -80, -90, -90, 0, 0,   10, 5, 0, -130, 90, 90, 0]
+        q3_list5 = Utils.interpolate_joint_trajectory(q3_target5,q3_target4, num = 30) 
+            
+        q3_target6 = [-50, 20, -10, -80, -90, 0, -70,   0, 0, 0, -130, 90, 0, 0]
+        q3_list6 = Utils.interpolate_joint_trajectory(q3_target6, q3_target5, num = 30)
+
+        q3_target7 = [-10, 25, 15, -70, -150, -50, -60,   0, 0, 0, -130, 90, 0, 0]
+        q3_list7 = Utils.interpolate_joint_trajectory(q3_target7, q3_target6, num = 30)
+
+        traj_ctrl.execute_trajectory(q3_list5, sleep_time=0.02)
+        traj_ctrl.execute_trajectory(q3_list6, sleep_time=0.02)
+        traj_ctrl.execute_trajectory(q3_list7, sleep_time=0.02)
+        time.sleep(0.5)
+        gripper_ctrl.control_left_gripper(0)
+        time.sleep(1)
+
+        pos3 = obj_pos.get_position(obj3)
+        ori3 = obj_pos.get_orientation(obj3)
+
+        in_region3 = Utils.is_in_target_region(pos3, target_region)
+        is_front3,deg3  = Utils.is_front_facing(quat_xyzw=ori3,body_front_axis='-y',front_world_dir='z',tol_deg=10)
+
+        if not (in_region3 and is_front3):
+            all_success = False
+            print("第三次失败❌")
+        elif in_region3 and is_front3:
+            print("第三次成功✅")
+
         # 检查任务完成情况
         if all_success:
             print("\033[92m✅ 任务成功\033[0m")

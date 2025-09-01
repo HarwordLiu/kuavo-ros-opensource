@@ -18,8 +18,8 @@ from std_msgs.msg import Bool, Int32
 from std_srvs.srv import Trigger, TriggerRequest, TriggerResponse
 import numpy as np
 
-class SimulatorTask1:
-    def __init__(self):
+class SimulatorTask1():
+    def __init__(self,seed):
         rospy.init_node('simulator_task1', anonymous=False)
 
         self.init_service = rospy.ServiceProxy('/simulator/init', Trigger)
@@ -48,15 +48,32 @@ class SimulatorTask1:
         self.already_reported_success = False
         self.intermediate_awarded = False
         # 区域阈值
-        self.target_region = [
-            (0.36, 0.62),   # x
-            (-0.6, -0.32),  # y
-            (0.85, 1.0)     # z
-        ]
+        self.seed = seed
+        self.obj_pos = ObjectPose()
+        # self.target_region = [
+        #     (0.36, 0.62),   # x
+        #     (-0.6, -0.32),  # y
+        #     (0.85, 1.0)     # z
+        # ]
+        # self.intermediate_region = [
+        #     (0.38, 0.52),   # x 范围
+        #     (-0.1, 0.04),   # y 范围
+        #     (0.85, 1.0)  # z 范围
+        # ]
+        self.marker1_pos = self.obj_pos.wait_for_position("marker1", timeout=5.0)
+        self.marker2_pos = self.obj_pos.wait_for_position("marker2", timeout=5.0)
+
         self.intermediate_region = [
-            (0.38, 0.52),   # x 范围
-            (-0.1, 0.04),   # y 范围
-            (0.85, 1.0)  # z 范围
+        (self.marker1_pos[0]-0.03, self.marker1_pos[0]+0.03),   # x 范围
+        (self.marker1_pos[1]-0.03, self.marker1_pos[1]+0.03),   # y 范围
+        (0.85, 1.1)  # z 范围
+        ]
+
+
+        self.target_region = [
+        (self.marker2_pos[0]-0.035, self.marker2_pos[0]+0.035),   # x 范围
+        (self.marker2_pos[1]-0.035, self.marker2_pos[1]+0.035),   # y 范围
+        (0.85, 1.1)  # z 范围
         ]
 
         self.evaluator = ScoringEvaluator(
@@ -68,7 +85,7 @@ class SimulatorTask1:
                 tol_deg=10.0,
                 success_base=40,
                 time_full=20,
-                time_threshold_sec=10,
+                time_threshold_sec=15,
                 time_penalty_per_sec=2,
                 intermediate_bonus=40,
             ),
@@ -122,7 +139,7 @@ class SimulatorTask1:
 
             # 随机化物体位置
             obj_pos = ObjectRandomizer()
-            x, y, z = self._sample_position_with_seed(seed=42,position_ranges={
+            x, y, z = self._sample_position_with_seed(seed=self.seed,position_ranges={
                     'x': [0.8, 1.0],
                     'y': [0.45, 0.65],
                     'z': [0.95, 0.95]
@@ -132,7 +149,7 @@ class SimulatorTask1:
                 object_name='box_grab',
                 position = {"x":x, "y":y, "z":z}
             )
-
+            print("\033[92mXXXXXXXX\033[0m",[x,y,z])
             # 2) 预抓位
             num = 20
             q_target1 = [0, 0, 0, -105, -70, 0, 0,   30, 0, 0, -140, 90, 0, 0]
@@ -211,11 +228,18 @@ class SimulatorTask1:
                 elif out["need_publish_success_false"]:
                     self.pub_success.publish(Bool(data=False))
 
-                if out["intermediate_triggered"]:
-                    rospy.loginfo(f"[sim] 🟡 中间点达成，加分 {self.evaluator.cfg.intermediate_bonus}，当前总分: {out['total_score']}")
+                if out["intermediate_pos_added"] or out["intermediate_ori_added"]:
+                    parts = []
+                    if out["intermediate_pos_added"]: parts.append("+30(位置)")
+                    if out["intermediate_ori_added"]: parts.append("+10(方向)")
+                    rospy.loginfo(f"[sim] 🟡 中间点达成：{' '.join(parts)}，总分 {out['total_score']}")
 
                 if out["success_triggered"]:
-                    rospy.loginfo(f"[sim] 用时 {out['elapsed_sec']:.2f}s，本次加分 {out['score_delta']}，总分 {out['total_score']}")
+                    parts = []
+                    if out["success_pos_added"]: parts.append(f"+{out['success_pos_added']}(位置)")
+                    if out["success_ori_added"]: parts.append(f"+{out['success_ori_added']}(方向)")
+                    parts.append(f"+{out['time_score_added']}(时间)")
+                    rospy.loginfo(f"[sim] ✅ 终点成功：{' '.join(parts)}，用时 {out['elapsed_sec']:.2f}s，总分 {out['total_score']}")
                     # 停止传送带
                     if out["need_stop_conveyor"]:
                         self.conveyor_ctrl.control_speed(0.0)
@@ -264,5 +288,10 @@ class SimulatorTask1:
             rospy.loginfo("[sim] 本轮未触发 start，不写入得分文件。")
 
 if __name__ == "__main__":
-    task = SimulatorTask1()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--seed",type = int)
+    args = parser.parse_args()
+    seed = args.seed
+    task = SimulatorTask1(seed)
     task.run()

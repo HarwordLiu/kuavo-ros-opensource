@@ -158,7 +158,7 @@ namespace
   std::mt19937 gen(rd());
 
   std::vector<std::string> body_names_to_publish = {
-  "box_grab", "shampoo1", "shampoo2", "shampoo3", "shampoo4", "item1", "item2"
+  "box_grab", "marker1","marker2","shampoo1", "shampoo2", "shampoo3", "shampoo4", "item1", "item2"
   };
 
   std::unordered_map<std::string, ros::Publisher> body_pose_publishers;

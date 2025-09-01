@@ -1,4 +1,4 @@
-import rospy
+import rospy, time
 from geometry_msgs.msg import PoseStamped
 
 class ObjectPose:
@@ -6,6 +6,8 @@ class ObjectPose:
         # 定义物体名到 topic 的映射
         self.name_to_topic = {
             "box_grab": "/mujoco/box_grab/pose",
+            "marker1": "/mujoco/marker1/pose",
+            "marker2": "/mujoco/marker2/pose",
             "shampoo1": "/mujoco/shampoo1/pose",
             "shampoo2": "/mujoco/shampoo2/pose",
             "shampoo3": "/mujoco/shampoo3/pose",
@@ -23,6 +25,16 @@ class ObjectPose:
 
     def _callback(self, msg, object_name):
         self.pose_data[object_name] = msg.pose
+
+    def wait_for_position(self, name, timeout=5.0):
+        end = time.time() + timeout
+        rate = rospy.Rate(20)
+        while time.time() < end and not rospy.is_shutdown():
+            pos = self.get_position(name)
+            if pos is not None:
+                return pos
+            rate.sleep()
+        raise RuntimeError(f"Timeout waiting for {name}")
 
     def get_position(self, object_name):
         """

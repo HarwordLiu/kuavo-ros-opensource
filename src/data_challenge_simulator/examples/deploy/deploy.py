@@ -1,10 +1,17 @@
 import os
 import sys
+HERE = os.path.dirname(os.path.abspath(__file__))               
+ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))           
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
 import time
 import signal
 import subprocess
 from datetime import datetime
 from pathlib import Path
+import argparse
+from utils.xml_random import randomize_mjcf
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -13,6 +20,79 @@ GREEN = "\033[92m"
 CYAN  = "\033[96m"
 YELLOW= "\033[93m"
 RESET = "\033[0m"
+
+cfg = {
+    "rules": [
+        # ---- marker1：位置 + 颜色 ----
+        {
+            "select": ".//body[@name='marker1']",
+            "attributes": {
+                "pos": {  # 基于 (0.52, -0.50, 0.8721)
+                    "per_dim": [
+                        {"uniform": [0.48, 0.52]},    # x
+                        {"uniform": [-0.05, 0]},  # y
+                        {"set": 0.8721}               # z 固定（也可用小范围 uniform）
+                    ]
+                }
+            }
+        },
+        {
+            "select": ".//body[@name='marker1']/geom",
+            "attributes": {
+                "rgba": {"color": {"alpha": [1.0, 1.0]}}  # 随机 RGB，alpha=1
+            }
+        },
+
+        # ---- marker2：位置 + 颜色 ----
+        {
+            "select": ".//body[@name='marker2']",
+            "attributes": {
+                "pos": {  # 基于 (0.42, -0.03, 0.8721)
+                    "per_dim": [
+                        {"uniform": [0.48, 0.56]},    # x
+                        {"uniform": [-0.58, -0.48]},   # y
+                        {"set": 0.8721}               # z 固定
+                    ]
+                }
+            }
+        },
+        {
+            "select": ".//body[@name='marker2']/geom",
+            "attributes": {
+                "rgba": {"color": {"alpha": [1.0, 1.0]}}
+            }
+        },
+
+        # ---- box_grab 两个几何的颜色 ----
+        {
+            "select": ".//geom[@name='box_on_belt']",
+            "attributes": {
+                "rgba": {"color": {"alpha": [1.0, 1.0]}}
+            }
+        },
+        {
+            "select": ".//geom[@name='box_base_disk']",
+            "attributes": {
+                "rgba": {"color": {"alpha": [1.0, 1.0]}}
+            }
+        },
+
+        # ---- 光照与视角 ----
+        {
+            "select": ".//visual/headlight",
+            "attributes": {
+                "diffuse": {"uniform": [0.2, 0.6], "ndim": 3},
+                "ambient": {"per_dim": [
+                {"uniform": [0.0, 0.3]},
+                {"uniform": [0.0, 0.3]},
+                {"uniform": [0.0, 0.3]}
+                ]},
+                "specular": {"uniform": [0.0, 0.2], "ndim": 3}
+            }
+        }
+    ]
+}
+
 
 def read_score_from_file(score_file: str) -> int:
     try:
@@ -32,7 +112,7 @@ def append_history(history_file: str, cycle_idx: int, score: int):
         pass
 
     # === 无限循环，直到 Ctrl+C 结束 ===
-def run_task(task_id: int):
+def run_task(task_id: int, headless: bool):
 
     print("[INFO] 启动 roscore...")
     roscore_process = subprocess.Popen(
@@ -42,6 +122,16 @@ def run_task(task_id: int):
         preexec_fn=os.setsid
     )
     time.sleep(1)
+
+        # 配置虚拟屏幕参数
+    if headless:
+        # # 设置 DISPLAY 环境变量
+        task_env = os.environ.copy()
+        # task_env["DISPLAY"] = display_num
+        task_env["MUJOCO_HEADLESS"] = "1"
+    else:
+        task_env = os.environ.copy()  # 不改变 DISPLAY
+
     task_script = os.path.join(SCRIPT_DIR, f"eval{task_id}.py")
     launch_file = f"load_kuavo_mujoco_sim{task_id}.launch"
 
@@ -60,12 +150,21 @@ def run_task(task_id: int):
     # === 无限循环，直到 Ctrl+C 结束 ===
     cycle_idx = 1
     while True:
+        seed = 42 + cycle_idx
+        n_changed = randomize_mjcf(
+            in_path="/root/kuavo_ws/src/data_challenge_simulator/models/biped_s45/xml/scene1.xml",
+            out_path="/root/kuavo_ws/src/data_challenge_simulator/models/biped_s45/xml/scene1.xml",
+            config=cfg,
+            seed = seed
+        )
+
         print(f"\n[INFO] === 第 {cycle_idx} 轮：启动仿真环境：{launch_file} ===")
         launch_process = subprocess.Popen(
             ['roslaunch', 'data_challenge_simulator', launch_file],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            preexec_fn=os.setsid  # 独立进程组，便于整体 SIGTERM
+            preexec_fn=os.setsid,  # 独立进程组，便于整体 SIGTERM
+            env=task_env
         )
 
         try:
@@ -87,8 +186,9 @@ def run_task(task_id: int):
                     os.remove(score_file)
             except Exception:
                 pass
-
-            task_process = subprocess.Popen(['python3', task_script], env=env)
+            
+            cmd = ['python3', task_script,'--seed', str(seed),]
+            task_process = subprocess.Popen(cmd, env=env)
 
             # 等到任务脚本退出（收到 /simulator/reset 后会自行退出）
             task_process.wait()
@@ -131,9 +231,9 @@ def run_task(task_id: int):
             print("[INFO] 仿真环境已关闭。")
 
         cycle_idx += 1
+    os.killpg(os.getpgid(roscore_process.pid), signal.SIGTERM)
 
-
-def main():
+def main(headless):
     task_id = None
     if len(sys.argv) >= 2:
         try:
@@ -153,7 +253,11 @@ def main():
         except Exception:
             task_id = None
 
-    run_task(task_id)
+    run_task(task_id,headless)
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--headless", default=False, help="是否使用无头模式")
+    args = parser.parse_args()
+    headless = args.headless
+    main(headless)
