@@ -39,24 +39,24 @@ def main():
     grasp_region = [
         (marker1_pos[0]-0.03, marker1_pos[0]+0.03),   # x 范围
         (marker1_pos[1]-0.03, marker1_pos[1]+0.03),   # y 范围
-        (0.85, 1.1)  # z 范围
+        (0.85, 0.98)  # z 范围
     ]
     target_region = [
         (marker2_pos[0]-0.035, marker2_pos[0]+0.035),   # x 范围
         (marker2_pos[1]-0.035, marker2_pos[1]+0.035),   # y 范围
-        (0.85, 1.1)  # z 范围
+        (0.85, 0.98)  # z 范围
     ]
 
-    offset_grasp= [0.05, -0.06, 0]
+    offset_grasp= [0.05, -0.08, 0]
     x_grasp = marker1_pos[0] + offset_grasp[0]
     y_grasp = marker1_pos[1] + offset_grasp[1]
-    z_grasp = 1.25 + offset_grasp[2]
+    z_grasp = 1.225 + offset_grasp[2]
     ori_grasp = (0.3775488479595588, -0.6276236743210512, -0.626605010384081, 0.2662922300738775)
 
-    offset_final= [0.03, -0.06, 0]
+    offset_final= [0.0275, -0.07, 0]
     x_final = marker2_pos[0] + offset_final[0]
     y_final = marker2_pos[1] + offset_final[1]
-    z_final = 1.2 + offset_final[2]
+    z_final = 1.175 + offset_final[2]
     ori_final = (-0.6139610282920115, -0.512807918741992, 0.35133137051614377, 0.48646290948578014)
 
     try:
@@ -65,8 +65,8 @@ def main():
         result = random_pos.randomize_object_position(
             object_name='box_grab',
             position_ranges={
-                'x': [0.8, 1.0],    # x轴范围
-                'y': [0.48, 0.63],   # y轴范围  
+                'x': [0.7, 0.9],    # x轴范围
+                'y': [0.60, 0.62],   # y轴范围  48-63
                 'z': [0.95, 0.95]     # z轴范围
             }
         )
@@ -75,6 +75,11 @@ def main():
         else:
             print(f"物体随机化失败: {result['message']}")
 
+        time_pause = 3
+        if result['final_position']["x"] > 0.825:
+            time_pause = 4
+        elif result['final_position']["x"] < 0.775:
+            time_pause = 2.5
 
 
         
@@ -90,23 +95,26 @@ def main():
         q_target3 = [-10, 15, 25, -95, -180, 15, -20,   30, 0, 0, -140, 90, 0, 0]
         q_list3 = Utils.interpolate_joint_trajectory(q_target3, q_target2, num=num)
 
-        conveyor_ctrl.control_speed(-0.1)
         print("双手移动到初始位置,传送带启动")
         
         traj_ctrl.execute_trajectory(q_list1, sleep_time=0.02)
         traj_ctrl.execute_trajectory(q_list2, sleep_time=0.02)
         traj_ctrl.execute_trajectory(q_list3, sleep_time=0.02)
         time.sleep(0.5)
-
+        conveyor_ctrl.control_speed(-0.1)
+        time.sleep(1.5)
         # 计算新的目标位置
         curr_q = robot_state.arm_joint_state().position
         l_pose, r_pose = robot.arm_fk(curr_q)
         pos_box = obj_pos.get_position("box_grab")
-        offset = 0.04
-        if pos_box[1] <= 0.5:
-            offset = 0.015
-        elif pos_box[1] >= 0.55:
-            offset = 0.055
+        offset = 0.0375
+        if 0.48<= pos_box[1] <= 0.53:
+            offset = 0.0125
+        elif 0.62>=pos_box[1] >= 0.60:
+            offset = 0.05
+            y_grasp = marker1_pos[1] + offset_grasp[1] + 0.0225
+        elif pos_box[1]>0.62:
+            y_grasp = marker1_pos[1] + offset_grasp[1] + 0.035
 
         l_pose_new = [l_pose.position[0], pos_box[1]+offset, l_pose.position[2] + robot_state.robot_position()[2]+0.05]
         pose1_left, _ = Utils.compute_pose(
@@ -124,7 +132,7 @@ def main():
         
         traj_ctrl.execute_trajectory(q_list_target, sleep_time=0.02)
 
-        time.sleep(4.8)
+        time.sleep(time_pause)
         gripper_ctrl.control_left_gripper(140)
         time.sleep(0.5)
 
@@ -138,7 +146,7 @@ def main():
         q_target6 = [0, -5, -30, -110, -160, 0, 0,  30, 0, 0, -140, 90, 0, 0]
         q_list6 = Utils.interpolate_joint_trajectory(q_target6, q_target5, num=num)
 
-        # 使用高频轨迹控制器
+        # # 使用高频轨迹控制器
         # traj_ctrl.execute_trajectory(q_list4, sleep_time=0.02)
         # traj_ctrl.execute_trajectory(q_list5, sleep_time=0.02)
         # traj_ctrl.execute_trajectory(q_list6, sleep_time=0.02)
@@ -163,8 +171,8 @@ def main():
 
         traj_ctrl.execute_trajectory(q_list_grasp, sleep_time=0.02)
 
-        time.sleep(0.5)
-        gripper_ctrl.control_left_gripper(0)  # 高频发布
+        time.sleep(1.0)
+        gripper_ctrl.control_left_gripper(0)
         time.sleep(0.5)
 
         # 判定是否正确翻面以及是否在区域内
@@ -200,7 +208,7 @@ def main():
         curr_q1 = robot_state.arm_joint_state().position
         l_pose1, r_pose1 = robot.arm_fk(curr_q1)
         pos_box1 = obj_pos.get_position("box_grab")
-        r_pose_new1 = [pos_box1[0]+0.1, pos_box1[1]+0.09, 1.05]
+        r_pose_new1 = [pos_box1[0]+0.1, pos_box1[1]+0.06, 1.05]
         _, pose1_right = Utils.compute_pose(
             robot,
             robot_state,
@@ -221,15 +229,20 @@ def main():
         gripper_ctrl.control_right_gripper(140)  # 高频发布
         time.sleep(0.5)
 
-        # 最后的动作
-        q_target10 = [-10, 5, 0, -95, -180, 25, -20,                -45, 0, 30, -100, 90, 0, 0]
-        q_list10 = Utils.interpolate_joint_trajectory(q_target10, q_target_deg1, num=num)
+        # # 最后的动作
+        # q_target10 = [-10, 5, 0, -95, -180, 25, -20,                -45, 0, 30, -100, 90, 0, 0]
+        # q_list10 = Utils.interpolate_joint_trajectory(q_target10, q_target_deg1, num=num)
 
-        q_target11 = [-10, 5, 0, -95, -180, 25, -20,                -35, -10, -15, -80, 90, 0, 0]
-        q_list11 = Utils.interpolate_joint_trajectory(q_target11, q_target10, num=num)
+        # q_target11 = [-10, 5, 0, -95, -180, 25, -20,                -25, -10, -23, -90, 90, 5, 0]
+        # q_list11 = Utils.interpolate_joint_trajectory(q_target11, q_target10, num=num)
 
-        q_target12 = [-10, 5, 0, -95, -180, 25, -20,                30, 0, 0, -140, 90, 0, 0]
-        q_list12 = Utils.interpolate_joint_trajectory(q_target12, q_target11, num=num)
+        # q_target12 = [-10, 5, 0, -95, -180, 25, -20,                30, 0, 0, -140, 90, 0, 0]
+        # q_list12 = Utils.interpolate_joint_trajectory(q_target12, q_target11, num=num)
+
+
+        # traj_ctrl.execute_trajectory(q_list10, sleep_time=0.02)
+        # traj_ctrl.execute_trajectory(q_list11, sleep_time=0.02)
+        # # traj_ctrl.execute_trajectory(q_list12, sleep_time=0.02)
 
         # time.sleep(1)
         # curr = robot_state.arm_joint_state().position
@@ -256,7 +269,7 @@ def main():
         traj_ctrl.execute_trajectory(q_list_final, sleep_time=0.02)
 
 
-        time.sleep(0.5)
+        time.sleep(1.0)
         gripper_ctrl.control_right_gripper(0)  # 高频发布
         time.sleep(1.0)
         # 检查任务完成情况

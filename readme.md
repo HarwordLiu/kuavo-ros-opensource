@@ -77,42 +77,36 @@ source devel/setup.zsh
 # 内容说明
 
 ## 文件结构
-
+```text
 data_challenge_simulator
-├── examples                        #脚本运行文件
-│   ├── automation.py               #自动采集数据文件
-│   ├── deploy
-│   │   ├── deploy.py               #推理过程仿真侧文件
-│   │   └── eval1.py
-│   ├── launch.py                   #单独运行任务文件
-│   ├── task1.py                    #任务1执行文件
-│   ├── task2.py                    #任务2执行文件
-│   ├── task3.py                    #任务3执行文件
-│   └── task4.py                    #任务4执行文件
-├── launch                          #roslaunch文件
-│
-├── models                          #机器人模型与场景文件
-│   ├── assets
-│   │   └── textures
-│   └── biped_s45
-│       └── xml
-│           ├── biped_s45.xml       #机器人模型
-│           ├── scene1.xml          #场景1
-│           ├── scene2.xml          #场景2
-│           ├── scene3.xml          #场景3
-│           └── scene4.xml          #场景4
-│ 
-└── utils                           #功能函数
-│    ├── conveyor_controller.py     #传送带控制
-│    ├── evaluator.py               #打分器
-│    ├── gripper_controller.py      #夹爪控制
-│    ├── object_pos.py              #获取物体位置和方向
-│    ├── object_randomizer.py       #设置物体位置
-│    ├── trajectory_controller.py   #机器人手臂运动
-│    └── utils.py                   #helper function
-├── CMakeLists.txt
-├── package.xml
-├── readme.md
+├─ examples                  # 脚本运行文件
+│  ├─ automation.py          # 自动采集数据文件
+│  └─ deploy
+│     ├─ deploy.py           # 推理过程仿真侧文件
+│     └─ eval1.py
+├─ launch                    # roslaunch 文件
+├─ models                    # 机器人模型与场景文件
+│  ├─ assets
+│  │  └─ textures
+│  └─ biped_s45
+│     └─ xml
+│        ├─ biped_s45.xml    # 机器人模型
+│        ├─ scene1.xml       # 场景1
+│        ├─ scene2.xml       # 场景2
+│        ├─ scene3.xml       # 场景3
+│        └─ scene4.xml       # 场景4
+├─ utils                     # 功能函数
+│  ├─ conveyor_controller.py # 传送带控制
+│  ├─ evaluator.py           # 打分器
+│  ├─ gripper_controller.py  # 夹爪控制
+│  ├─ object_pos.py          # 获取物体位置和方向
+│  ├─ object_randomizer.py   # 设置物体位置
+│  ├─ trajectory_controller.py # 机械臂手臂运动
+│  └─ utils.py               # helper function
+├─ CMakeLists.txt
+├─ package.xml
+└─ readme.md
+```
 
 ## 如何使用
 1. 数据采集
@@ -136,7 +130,6 @@ python3 deploy.py
 推理过程中，若完成任务或者推理结束，都会自动结束此次推理并结束所有进程，开始下一次推理过程
 每一轮的得分和目前的平均分会在terminal中显示，只取有效的数据计入总成绩
 
-评分标准（任务1）：
-a. 成功抓住传送带上物体并放到桌面上指定区域，加30分，保持方向正确，加10分
-b. 成功抓住放置到桌面物体并放到最终目标区域，，加30分，保持方向正确，加10分
-c. 在规定时间内完成，加20分，超出规定时间，每1秒扣2分
+评分标准（任务1与任务2）：
+a. 成功抓住传送带上物体并放到桌面上指定区域，加40分，保持方向正确，加10分
+b. 成功抓住放置到桌面物体并放到最终目标区域，，加40分，保持方向正确，加10分

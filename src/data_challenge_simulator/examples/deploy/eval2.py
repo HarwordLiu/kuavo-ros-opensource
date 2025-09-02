@@ -18,7 +18,7 @@ from std_msgs.msg import Bool, Int32
 from std_srvs.srv import Trigger, TriggerRequest, TriggerResponse
 import numpy as np
 
-class SimulatorTask1():
+class SimulatorTask2():
     def __init__(self,seed):
         rospy.init_node('simulator_task1', anonymous=False)
 
@@ -64,15 +64,15 @@ class SimulatorTask1():
         self.marker2_pos = self.obj_pos.wait_for_position("marker2", timeout=5.0)
 
         self.intermediate_region = [
-        (self.marker1_pos[0]-0.03, self.marker1_pos[0]+0.03),   # x 范围
-        (self.marker1_pos[1]-0.03, self.marker1_pos[1]+0.03),   # y 范围
-        (0.85, 0.98)  # z 范围
+        (self.marker1_pos[0]-0.07, self.marker1_pos[0]+0.07),   # x 范围
+        (self.marker1_pos[1]-0.07, self.marker1_pos[1]+0.07),   # y 范围
+        (0.9, 1.02)  # z 范围
         ]
 
 
         self.target_region = [
-        (self.marker2_pos[0]-0.035, self.marker2_pos[0]+0.035),   # x 范围
-        (self.marker2_pos[1]-0.035, self.marker2_pos[1]+0.035),   # y 范围
+        (self.marker2_pos[0]-0.03, self.marker2_pos[0]+0.03),   # x 范围
+        (self.marker2_pos[1]-0.03, self.marker2_pos[1]+0.03),   # y 范围
         (0.85, 0.98)  # z 范围
         ]
 
@@ -139,9 +139,9 @@ class SimulatorTask1():
             # 随机化物体位置
             obj_pos = ObjectRandomizer()
             x, y, z = self._sample_position_with_seed(seed=self.seed,position_ranges={
-                    'x': [0.8, 1.0],
-                    'y': [0.45, 0.65],
-                    'z': [0.95, 0.95]
+                    'x': [0.4, 0.55],    # x轴范围
+                    'y': [-0.6, -0.6],   # y轴范围  
+                    'z': [0.95, 0.95]     # z轴范围
                 })
             
             result = obj_pos.set_object_position(
@@ -150,23 +150,17 @@ class SimulatorTask1():
             )
             print("\033[92mXXXXXXXX\033[0m",[x,y,z])
             # 2) 预抓位
-            num = 20
-            q_target1 = [0, 0, 0, -105, -70, 0, 0,   30, 0, 0, -140, 90, 0, 0]
-            q_list1 = Utils.interpolate_joint_trajectory(q_target1, num=num)
-
-            q_target2 = [-10, 15, 25, -100, -120, 0, 0,   30, 0, 0, -120, 90, 0, 0]
+            num = 30
+            q_target1 = [0, 0, 0, 0, -90, 0, 0,   80, -30, 0, -130, 45, 0, 0]
+            q_list1 = Utils.interpolate_joint_trajectory(q_target1, num=num) 
+                
+            q_target2 = [0, 0, 0, 0, -90, 0, 0,   20, 0, 0, -120, 90, 0, 0]
             q_list2 = Utils.interpolate_joint_trajectory(q_target2, q_target1, num=num)
-
-            q_target3 = [-10, 15, 25, -95, -180, 25, -20,   30, 0, 0, -140, 90, 0, 0]
-            q_list3 = Utils.interpolate_joint_trajectory(q_target3, q_target2, num=num)
 
             for q in q_list1 :
                 self.robot.control_arm_joint_positions(q)
                 time.sleep(0.02)
             for q in q_list2:
-                self.robot.control_arm_joint_positions(q)
-                time.sleep(0.02)
-            for q in q_list3:
                 self.robot.control_arm_joint_positions(q)
                 time.sleep(0.02)
             
@@ -292,5 +286,5 @@ if __name__ == "__main__":
     parser.add_argument("--seed",type = int)
     args = parser.parse_args()
     seed = args.seed
-    task = SimulatorTask1(seed)
+    task = SimulatorTask2(seed)
     task.run()

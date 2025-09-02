@@ -45,20 +45,20 @@ def main():
         (0.9, 1.2)  # z 范围
     ]
     target_region = [
-        (marker2_pos[0]-0.035, marker2_pos[0]+0.035),   # x 范围
-        (marker2_pos[1]-0.035, marker2_pos[1]+0.035),   # y 范围
-        (0.85, 1.3)  # z 范围
+        (marker2_pos[0]-0.03, marker2_pos[0]+0.03),   # x 范围
+        (marker2_pos[1]-0.03, marker2_pos[1]+0.03),   # y 范围
+        (0.85, 1.1)  # z 范围
     ]
 
 
 
-    offset_grasp= [0.02, 0.06, 0]
+    offset_grasp= [0.03, 0.075, 0]
     x_grasp = marker1_pos[0] + offset_grasp[0]
     y_grasp = marker1_pos[1] + offset_grasp[1]
     z_grasp = 1.2 + offset_grasp[2]
     ori_grasp = (-0.2984213394927986, -0.7120386976902843, 0.5975628002405355, 0.2164816317740088)
 
-    offset_final= [0.04, 0.07, 0]
+    offset_final= [0.035, 0.09, 0]
     x_final = marker2_pos[0] + offset_final[0]
     y_final = marker2_pos[1] + offset_final[1]
     z_final = 1.15 + offset_final[2]
@@ -67,13 +67,13 @@ def main():
 
     try:
         # 随机物体位置
-        y_target = random.uniform(-0.5, -0.2)
+        y_target = random.uniform(-0.25, -0.25)  #-0.2-0.5
         random_pos = ObjectRandomizer()
         result = random_pos.randomize_object_position(
             object_name='box_grab',
             position_ranges={
                 'x': [0.4, 0.55],    # x轴范围
-                'y': [-0.6, -0.6],   # y轴范围  
+                'y': [-0.8, -0.8],   # y轴范围  
                 'z': [0.95, 0.95]     # z轴范围
             }
         )
@@ -96,9 +96,18 @@ def main():
         
         traj_ctrl.execute_trajectory(q_list1, sleep_time=0.02)
         traj_ctrl.execute_trajectory(q_list2, sleep_time=0.02)
-        conveyor_ctrl.control_speed(0.1)
-        time.sleep(0.5)
 
+        time.sleep(2.5)
+        conveyor_ctrl.control_speed(0.1)
+        time_pause = 1.5
+        if y_target >= -0.25:
+            time_pause = 3
+        elif -0.25 > y_target >= -0.4:
+            time_pause = 2
+        elif -0.4 > y_target:
+            time_pause = 1.5
+
+        time.sleep(time_pause)
         # 计算俯仰角并调整姿态
         curr_q_rot = robot_state.arm_joint_state().position
         l_pose_rot, r_pose_rot = robot.arm_fk(curr_q_rot)

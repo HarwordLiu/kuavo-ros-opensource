@@ -6,6 +6,7 @@ from datetime import datetime
 import rospy
 import rostopic
 from std_msgs.msg import Empty
+import argparse
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -28,7 +29,7 @@ def wait_for_topics(timeout=15):
     """等待关键话题开始发布数据"""
     print(f"[INFO] 等待关键话题发布数据...")
     start_time = time.time()
-    key_topics = ['/kuavo_arm_traj', '/gripper/command','/sensors_data_raw', '/gripper/state',]
+    key_topics = ['/belt/speed_command']
     
     while time.time() - start_time < timeout:
         try:
@@ -90,19 +91,28 @@ def run_only_task(task_id: int):
     print(f"[INFO] 任务 {task_id} 执行完成。\n")
 
 
-def run_once(round_id: int, task_id: int):
+def run_once(round_id: int, task_id: int,headless: bool):
     start_time = time.time()
     bag_filename = f"data_round_{round_id:07d}.bag"
 
     launch_file = f"load_kuavo_mujoco_sim{task_id}.launch"
     task_script = os.path.join(SCRIPT_DIR, f"task{task_id}.py")
 
+    if headless:
+        # # 设置 DISPLAY 环境变量
+        task_env = os.environ.copy()
+        # task_env["DISPLAY"] = display_num
+        task_env["MUJOCO_HEADLESS"] = "1"
+    else:
+        task_env = os.environ.copy()  # 不改变 DISPLAY
+
     # 启动仿真环境
     launch_process = subprocess.Popen(
         ['roslaunch', 'data_challenge_simulator', launch_file],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
-        preexec_fn=os.setsid
+        preexec_fn=os.setsid,
+        env = task_env
     )
     print(f"[INFO] Round {round_id}: Launched {launch_file}")
     time.sleep(2)
@@ -173,7 +183,7 @@ def run_once(round_id: int, task_id: int):
     return duration, is_success
 
 
-def main():
+def main(headless):
     print("========== 数据采集任务启动 ==========")
     print("请选择场景与任务编号（1-4）:")
     print("1: 任务1 —— 传送带物品分拣")
@@ -215,7 +225,7 @@ def main():
 
     for i in range(repeat_times):
         print(f"\n====== 🚀 Round {i+1}/{repeat_times} ======")
-        duration, is_success = run_once(i + 1, task_id)
+        duration, is_success = run_once(i + 1, task_id,headless)
         durations.append(duration)
         if is_success:
             success_count += 1
@@ -238,4 +248,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--headless", default=False, help="是否使用无头模式")
+    args = parser.parse_args()
+    headless = args.headless
+    main(headless)

@@ -5,7 +5,7 @@ import time
 
 class ConveyorController:
     def __init__(self):
-        self.belt_speed_pub = rospy.Publisher('/belt/speed_command', Vector3Stamped, queue_size=10)
+        self.belt_speed_pub = rospy.Publisher('/belt/speed_command', Vector3Stamped, queue_size=10,latch=True)
         time.sleep(0.5)
         
     def control_speed(self, speed):
