@@ -203,6 +203,10 @@ class KuavoRobot(RobotBase):
         Note:
             你可以调用 :meth:`KuavoRobotState.wait_for_step_control` 来等待机器人进入step-control模式。
             你可以调用 :meth:`KuavoRobotState.wait_for_stance` 来等待step-control完成。
+
+        tips:
+            坐标系: base_link坐标系
+            执行误差： 0.005~0.05m, 0.05°以下
         """    
         if len(target_pose) != 4:
             raise ValueError(f"[Robot] target_pose length must be 4 (x, y, z, yaw), but got {len(target_pose)}")
@@ -226,6 +230,10 @@ class KuavoRobot(RobotBase):
             
         Note:
             此命令会将机器人状态改变为'command_pose'。
+        
+        tips:
+            坐标系: base_link坐标系
+            执行误差： 0.05~0.1m, 0.2~5°
         """
         return self._kuavo_core.control_command_pose(target_pose_x, target_pose_y, target_pose_z, target_pose_yaw)
 
@@ -246,6 +254,10 @@ class KuavoRobot(RobotBase):
             
         Note:
             此命令会将机器人状态改变为'command_pose_world'。
+
+        tips:
+            坐标系: odom坐标系
+            执行误差： 0.03~0.1m, 0.5~5°
         """
         return self._kuavo_core.control_command_pose_world(target_pose_x, target_pose_y, target_pose_z, target_pose_yaw)
     
@@ -270,6 +282,21 @@ class KuavoRobot(RobotBase):
         return self._robot_head.disable_head_tracking()
     
     """ Robot Arm Control """
+    def control_hand_wrench(self, left_wrench: list, right_wrench: list) -> bool:
+        """控制机器人末端力/力矩
+        
+        Args:
+            left_wrench (list): 左手臂6维力控指令 [Fx, Fy, Fz, Tx, Ty, Tz]
+            right_wrench (list): 右手臂6维力控指令 [Fx, Fy, Fz, Tx, Ty, Tz]
+                单位:
+                Fx,Fy,Fz: 牛顿(N)
+                Tx,Ty,Tz: 牛·米(N·m)
+        
+        Returns:
+            bool: 控制成功返回True, 否则返回False
+        """
+        return self._robot_arm.control_hand_wrench(left_wrench, right_wrench)
+
     def arm_reset(self)->bool:
         """手臂归位
         
@@ -327,6 +354,27 @@ class KuavoRobot(RobotBase):
         """
         return self._robot_arm.control_arm_joint_trajectory(times, q_frames)
 
+    def control_arm_target_poses(self, times: list, q_frames: list) -> bool:
+        """Control the target poses of the robot arm.
+
+        Args:
+            times (list): List of time intervals in seconds.
+            q_frames (list): List of joint positions in radians.
+
+        Returns:
+            bool: True if the control was successful, False otherwise.
+
+        Raises:
+            ValueError: If the times list is not of the correct length.
+            ValueError: If the joint position list is not of the correct length.
+            ValueError: If the joint position is outside the range of [-π, π].
+            RuntimeError: If the robot is not in stance state when trying to control the arm.
+
+        Note:
+            This is an asynchronous interface. The function returns immediately after sending the command.
+            Users need to wait for the motion to complete on their own.
+        """
+        return self._robot_arm.control_arm_target_poses(times, q_frames)
     def set_fixed_arm_mode(self) -> bool:
         """固定/冻结机器人手臂。
         
@@ -407,7 +455,17 @@ class KuavoRobot(RobotBase):
             此函数需要在初始化SDK时设置 :attr:`KuavoSDK.Options.WithIK` 选项。
         """
         return self._robot_arm.arm_ik(left_pose, right_pose, left_elbow_pos_xyz, right_elbow_pos_xyz, arm_q0, params)
-
+    def arm_ik_free(self, 
+                    left_pose: KuavoPose, 
+                    right_pose: KuavoPose, 
+                    left_elbow_pos_xyz: list = [0.0, 0.0, 0.0],
+                    right_elbow_pos_xyz: list = [0.0, 0.0, 0.0],
+                    arm_q0: list = None,
+                    params: KuavoIKParams=None) -> list:
+        """Inverse kinematics for the robot arm.
+        """
+        return self._robot_arm.arm_ik_free(left_pose, right_pose, left_elbow_pos_xyz, right_elbow_pos_xyz, arm_q0, params)
+    
     def arm_fk(self, q: list) -> Tuple[KuavoPose, KuavoPose]:
         """机器人手臂的正运动学求解
         
@@ -456,7 +514,41 @@ class KuavoRobot(RobotBase):
             Tuple[bool, list]: 成功标志和 :class:`kuavo_humanoid_sdk.interfaces.data_types.KuavoMotorParam` 对象列表的元组
         """
         return self._kuavo_core.get_motor_param()
+
+    def enable_base_pitch_limit(self, enable: bool) -> Tuple[bool, str]:
+        """开启/关闭机器人 basePitch 限制
         
+        Note:
+             该接口用于关闭或开启机器人 basePitch 保护功能，关闭状态下可以进行比较大幅度的前后倾动作而不会触发保护导致摔倒。
+
+        Args:
+            enable (bool): 开启/关闭
+        """
+        return self._kuavo_core.enable_base_pitch_limit(enable)
+    
+    def is_arm_collision(self)->bool:
+        """判断当前是否发生碰撞
+        
+        Returns:
+            bool: 发生碰撞返回True,否则返回False
+        """
+        return self._robot_arm.is_arm_collision()
+    
+    def wait_arm_collision_complete(self):
+        """等待碰撞完成
+        """
+        self._robot_arm.wait_arm_collision_complete()
+
+    def release_arm_collision_mode(self):
+        """释放碰撞模式
+        """
+        self._robot_arm.release_arm_collision_mode()
+
+    def set_arm_collision_mode(self, enable: bool):
+        """设置碰撞模式
+        """
+        self._robot_arm.set_arm_collision_mode(enable)
+
 if __name__ == "__main__":
     robot = KuavoRobot()
     robot.set_manipulation_mpc_mode(KuavoManipulationMpcCtrlMode.ArmOnly)
