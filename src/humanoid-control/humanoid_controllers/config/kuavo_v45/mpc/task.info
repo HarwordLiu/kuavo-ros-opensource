@@ -482,7 +482,7 @@ frictionConeSoftConstraint
 
 basePitchLimits
 {
-  enable                 true ;can be close by /humanoid/mpc/enable_base_pitch_limit
+  enable                 false ;can be close by /humanoid/mpc/enable_base_pitch_limit
   pos
   {
     mu      0.1       ; relaxed log barrier mu
