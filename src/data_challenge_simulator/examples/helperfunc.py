@@ -229,7 +229,8 @@ def main(headless):
         durations.append(duration)
         if is_success:
             success_count += 1
-
+        time.sleep(3)
+        
     all_end_time = time.time()
     total_time = all_end_time - all_start_time
 

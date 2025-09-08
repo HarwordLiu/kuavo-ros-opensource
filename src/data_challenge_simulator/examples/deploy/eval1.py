@@ -83,9 +83,9 @@ class SimulatorTask1():
                 body_front_axis='z',
                 front_world_dir='z',
                 tol_deg=10.0,
-                # time_full=20,
-                # time_threshold_sec=15,
-                # time_penalty_per_sec=2,
+                time_full=20,
+                time_threshold_sec=15,
+                time_penalty_per_sec=2,
                 # intermediate_bonus=40,
             ),
             is_in_region_fn=lambda pos, region: Utils.is_in_target_region(pos, region),
@@ -139,7 +139,7 @@ class SimulatorTask1():
             # 随机化物体位置
             obj_pos = ObjectRandomizer()
             x, y, z = self._sample_position_with_seed(seed=self.seed,position_ranges={
-                    'x': [0.8, 1.0],
+                    'x': [0.7, 0.9],
                     'y': [0.45, 0.65],
                     'z': [0.95, 0.95]
                 })
@@ -151,13 +151,13 @@ class SimulatorTask1():
             print("\033[92mXXXXXXXX\033[0m",[x,y,z])
             # 2) 预抓位
             num = 20
-            q_target1 = [0, 0, 0, -105, -70, 0, 0,   30, 0, 0, -140, 90, 0, 0]
+            q_target1 = [0, 0, 0, -105, -70, 0, 0,   50, 0, 0, -140, 90, 0, 0]
             q_list1 = Utils.interpolate_joint_trajectory(q_target1, num=num)
 
-            q_target2 = [-10, 15, 25, -100, -120, 0, 0,   30, 0, 0, -120, 90, 0, 0]
+            q_target2 = [-10, 15, 25, -100, -120, 0, 0,   50, 0, 0, -120, 90, 0, 0]
             q_list2 = Utils.interpolate_joint_trajectory(q_target2, q_target1, num=num)
 
-            q_target3 = [-10, 15, 25, -95, -180, 25, -20,   30, 0, 0, -140, 90, 0, 0]
+            q_target3 = [-10, 15, 25, -95, -180, 25, -20,   50, 0, 0, -140, 90, 0, 0]
             q_list3 = Utils.interpolate_joint_trajectory(q_target3, q_target2, num=num)
 
             for q in q_list1 :
@@ -217,7 +217,7 @@ class SimulatorTask1():
                     continue
 
                 # 调用通用评估器
-                out = self.evaluator.evaluate(pos, ori)
+                out = self.evaluator.evaluate(pos, ori, now=time.time())
 
                 # 按评估器的“建议标志”做 ROS 行为
                 if out["need_publish_success_true"]:
@@ -229,16 +229,16 @@ class SimulatorTask1():
 
                 if out["intermediate_pos_added"] or out["intermediate_ori_added"]:
                     parts = []
-                    if out["intermediate_pos_added"]: parts.append("+40(位置)")
+                    if out["intermediate_pos_added"]: parts.append("+30(位置)")
                     if out["intermediate_ori_added"]: parts.append("+10(方向)")
                     rospy.loginfo(f"[sim] 🟡 中间点达成：{' '.join(parts)}，总分 {out['total_score']}")
 
                 if out["final_pos_added"] or out["final_ori_added"]:
                     parts = []
-                    if out["final_pos_added"]: parts.append("+40(位置)")
+                    if out["final_pos_added"]: parts.append("+30(位置)")
                     if out["final_ori_added"]: parts.append("+10(方向)")
-                    # parts.append(f"+{out['time_score_added']}(时间)")
-                    rospy.loginfo(f"[sim] 🟡 终点成功:{' '.join(parts)}， 总分 {out['total_score']}")
+                    parts.append(f"+{out['time_score_added']}(时间)")
+                    rospy.loginfo(f"[sim] 🟡 终点成功:{' '.join(parts)}， 用时 {out['elapsed_sec']:.2f}s，总分 {out['total_score']}")
                     # 停止传送带
                     if out["need_stop_conveyor"]:
                         self.conveyor_ctrl.control_speed(0.0)

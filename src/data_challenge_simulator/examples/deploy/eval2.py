@@ -66,13 +66,13 @@ class SimulatorTask2():
         self.intermediate_region = [
         (self.marker1_pos[0]-0.07, self.marker1_pos[0]+0.07),   # x 范围
         (self.marker1_pos[1]-0.07, self.marker1_pos[1]+0.07),   # y 范围
-        (0.9, 1.02)  # z 范围
+        (0.85, 1.02)  # z 范围
         ]
 
 
         self.target_region = [
-        (self.marker2_pos[0]-0.03, self.marker2_pos[0]+0.03),   # x 范围
-        (self.marker2_pos[1]-0.03, self.marker2_pos[1]+0.03),   # y 范围
+        (self.marker2_pos[0]-0.035, self.marker2_pos[0]+0.035),   # x 范围
+        (self.marker2_pos[1]-0.035, self.marker2_pos[1]+0.035),   # y 范围
         (0.85, 0.98)  # z 范围
         ]
 
@@ -83,9 +83,9 @@ class SimulatorTask2():
                 body_front_axis='z',
                 front_world_dir='z',
                 tol_deg=10.0,
-                # time_full=20,
-                # time_threshold_sec=15,
-                # time_penalty_per_sec=2,
+                time_full=20,
+                time_threshold_sec=15,
+                time_penalty_per_sec=2,
                 # intermediate_bonus=40,
             ),
             is_in_region_fn=lambda pos, region: Utils.is_in_target_region(pos, region),
@@ -140,7 +140,7 @@ class SimulatorTask2():
             obj_pos = ObjectRandomizer()
             x, y, z = self._sample_position_with_seed(seed=self.seed,position_ranges={
                     'x': [0.4, 0.55],    # x轴范围
-                    'y': [-0.6, -0.6],   # y轴范围  
+                    'y': [-0.8, -0.8],   # y轴范围  
                     'z': [0.95, 0.95]     # z轴范围
                 })
             
@@ -211,7 +211,7 @@ class SimulatorTask2():
                     continue
 
                 # 调用通用评估器
-                out = self.evaluator.evaluate(pos, ori)
+                out = self.evaluator.evaluate(pos, ori, now=time.time())
 
                 # 按评估器的“建议标志”做 ROS 行为
                 if out["need_publish_success_true"]:
@@ -223,16 +223,16 @@ class SimulatorTask2():
 
                 if out["intermediate_pos_added"] or out["intermediate_ori_added"]:
                     parts = []
-                    if out["intermediate_pos_added"]: parts.append("+40(位置)")
+                    if out["intermediate_pos_added"]: parts.append("+30(位置)")
                     if out["intermediate_ori_added"]: parts.append("+10(方向)")
                     rospy.loginfo(f"[sim] 🟡 中间点达成：{' '.join(parts)}，总分 {out['total_score']}")
 
                 if out["final_pos_added"] or out["final_ori_added"]:
                     parts = []
-                    if out["final_pos_added"]: parts.append("+40(位置)")
+                    if out["final_pos_added"]: parts.append("+30(位置)")
                     if out["final_ori_added"]: parts.append("+10(方向)")
-                    # parts.append(f"+{out['time_score_added']}(时间)")
-                    rospy.loginfo(f"[sim] 🟡 终点成功:{' '.join(parts)}， 总分 {out['total_score']}")
+                    parts.append(f"+{out['time_score_added']}(时间)")
+                    rospy.loginfo(f"[sim] 🟡 终点成功:{' '.join(parts)}， 用时 {out['elapsed_sec']:.2f}s，总分 {out['total_score']}")
                     # 停止传送带
                     if out["need_stop_conveyor"]:
                         self.conveyor_ctrl.control_speed(0.0)

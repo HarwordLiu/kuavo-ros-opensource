@@ -1,6 +1,5 @@
 <mujoco model="kuavo scene">
   <include file="biped_s45.xml"/>
-  <!-- <include file="../../assets/Threshold_Bistro_Ceramic_Dinner_Plate_Ruby_Ring/model.xml"/> -->
   <statistic center="0 0 1" extent="1.8"/>
   <visual>
       <headlight diffuse="0.6 0.6 0.6" ambient="0.1 0.1 0.1" specular="0 0 0"/>
@@ -137,10 +136,10 @@
       <body name="shelf_left" pos="-1.7 0.0 0.0">
 
             <!-- 立柱 -->
-            <geom type="box" size="0.02 0.02 0.8" pos=" 0.55  1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
-            <geom type="box" size="0.02 0.02 0.8" pos="-0.55  1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
-            <geom type="box" size="0.02 0.02 0.8" pos=" 0.55  -1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
-            <geom type="box" size="0.02 0.02 0.8" pos="-0.55  -1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
+            <geom type="box" size="0.02 0.02 0.9" pos=" 0.55  1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
+            <geom type="box" size="0.02 0.02 0.9" pos="-0.55  1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
+            <geom type="box" size="0.02 0.02 0.9" pos=" 0.55  -1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
+            <geom type="box" size="0.02 0.02 0.9" pos="-0.55  -1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
 
             <!-- 搁板 -->
             <geom name="left_shelf_L1" type="box" size="0.55 1 0.01" pos="0 0 0.25"
@@ -175,38 +174,16 @@
                   size="0.01 1.00 0.02" pos="-0.54 0 1.63"
                   rgba="0.90 0.90 0.90 1" friction="1.0 0.01 0.0001"/>
 
-
-            <!-- 箱 -->
-            <body name="left_bin_A" pos="0.35 0.3 0.76" euler="0 0 1.57">
-
-            <!-- 底板 -->
-            <geom type="box" size="0.18 0.14 0.005" rgba="0.20 0.55 1.00 1"
-                  friction="1.0 0.01 0.0001" solimp="0.95 0.99 0.002" solref="0.008 1"/>
-            <!-- 侧板 -->
-            <geom type="box" size="0.18 0.005 0.05" pos="0  0.145 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-            <geom type="box" size="0.18 0.005 0.05" pos="0 -0.145 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-            <geom type="box" size="0.005 0.14 0.05" pos=" 0.185 0 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-            <geom type="box" size="0.005 0.14 0.05" pos="-0.185 0 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-            </body>
-
-            <body name="left_bin_B" pos="0.35 -0.3 0.76" euler="0 0 1.57">
-
-            <geom type="box" size="0.18 0.14 0.005" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-            <geom type="box" size="0.18 0.005 0.05" pos="0  0.145 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-            <geom type="box" size="0.18 0.005 0.05" pos="0 -0.145 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-            <geom type="box" size="0.005 0.14 0.05" pos=" 0.185 0 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-            <geom type="box" size="0.005 0.14 0.05" pos="-0.185 0 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-            </body>
             </body>
 
             <!-- ================= 前货架（倾斜） ================= -->
             <body name="shelf_right" pos="1.7 0.0 0.0">
 
             <!-- 立柱 -->
-            <geom type="box" size="0.02 0.02 0.8" pos=" 0.55  1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
-            <geom type="box" size="0.02 0.02 0.8" pos="-0.55  1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
-            <geom type="box" size="0.02 0.02 0.8" pos=" 0.55  -1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
-            <geom type="box" size="0.02 0.02 0.8" pos="-0.55  -1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
+            <geom type="box" size="0.02 0.02 0.9" pos=" 0.55  1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
+            <geom type="box" size="0.02 0.02 0.9" pos="-0.55  1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
+            <geom type="box" size="0.02 0.02 0.9" pos=" 0.55  -1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
+            <geom type="box" size="0.02 0.02 0.9" pos="-0.55  -1 0.90" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
 
             <!-- 搁板 -->
             <geom name="right_shelf_L1" type="box" size="0.55 1 0.01" pos="0 0 0.25" euler="0 -0.05 0"
@@ -241,38 +218,67 @@
                   rgba="0.90 0.90 0.90 1" friction="1.0 0.01 0.0001"/>
 
 
-            <!-- 箱（倾斜） -->
-            <body name="right_bin_A" pos="-0.37 0.00 0.75" euler="0 -0.05 1.57">
 
-            <geom type="box" size="0.20 0.14 0.005" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-            <geom type="box" size="0.20 0.005 0.05" pos="0  0.145 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-            <geom type="box" size="0.20 0.005 0.05" pos="0 -0.145 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-            <geom type="box" size="0.005 0.14 0.05" pos=" 0.205 0 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-            <geom type="box" size="0.005 0.14 0.05" pos="-0.205 0 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-            </body>
-      </body>
-      <body name="item1" pos="1.33 0.1 0.9" euler="0 0 -0.4">
-      <freejoint/>
-            <geom type="box" size="0.08 0.03 0.08" rgba="0.1 0.1 0.1 1" mass="1e-3" friction="1.0 0.01 0.0001"/>
       </body>
 
-      <body name="item2" pos="1.33 -0.1 0.9" euler="0 0 0.4">
-      <freejoint/>
+
+      <!-- 箱（倾斜） -->
+      <body name="right_bin_A" pos="1.33 0.00 0.75" euler="0 -0.05 1.57">
+
+      <geom type="box" size="0.60 0.14 0.005" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.60 0.005 0.04" pos="0  0.145 0.04" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.60 0.005 0.04" pos="0 -0.145 0.04" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.005 0.14 0.04" pos=" 0.605 0 0.04" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.005 0.14 0.04" pos="-0.605 0 0.04" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      </body>
+
+      <!-- 箱 -->
+      <body name="left_bin_A" pos="-1.35 0.3 0.76" euler="0 0 1.57">
+      <freejoint name="left_bin_A"/>
+      <!-- 底板 -->
+      <geom type="box" size="0.12 0.14 0.005" rgba="0.20 0.55 1.00 1"
+            friction="1.0 0.01 0.0001" solimp="0.95 0.99 0.002" solref="0.008 1"/>
+      <!-- 侧板 -->
+      <geom type="box" size="0.12 0.005 0.05" pos="0  0.145 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.12 0.005 0.05" pos="0 -0.145 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.005 0.14 0.05" pos=" 0.125 0 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.005 0.14 0.05" pos="-0.125 0 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      </body>
+
+      <body name="left_bin_B" pos="-1.35 -0.3 0.76" euler="0 0 1.57">
+      <freejoint name="left_bin_B"/>
+      <geom type="box" size="0.12 0.14 0.005" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.12 0.005 0.05" pos="0  0.145 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.12 0.005 0.05" pos="0 -0.145 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.005 0.14 0.05" pos=" 0.125 0 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.005 0.14 0.05" pos="-0.125 0 0.05" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      </body>
+
+      <body name="item1" pos="1.33 -0.3 0.9" euler="0 0 0">
+      <freejoint name="item1"/>
+            <geom type="box" size="0.08 0.03 0.08" rgba="1 1 1 1" mass="1e-3" friction="1.0 0.01 0.0001"/>
+      </body>
+
+      <body name="item2" pos="1.33 0.3 0.9" euler="0 0 0">
+      <freejoint name="item2"/>
             <geom type="box" size="0.08 0.03 0.08" rgba="0.1 0.1 0.1 1" mass="1e-3" friction="1.0 0.01 0.0001"/>
       </body>
       
 
-      <!-- <body name="belt_plate1" pos="0.6 0 3.8">  
+      <body name="belt_plate1" pos="0.6 0 5.8">  
             <inertial pos="0 0 0" mass="1e-1" diaginertia="1e-6 1e-6 1e-6"/>
             <joint name="belt_slide" type="slide" axis="0 1 0" range="-20 20" damping="0.001"/>
             <geom  name="belt_geom1" type="box"
                   size="0.4 100 0.01"           
                   material="roofs_mat"
                   friction="1.0 0.005 0.0001"/>
-      </body> -->
+      </body>
+
   </worldbody>
 
-
+  <actuator>
+      <velocity name="belt_speed" joint="belt_slide" kv="1" ctrlrange="-0.1 0.1" />
+  </actuator>
 
 <!-- baselink
       r_leg

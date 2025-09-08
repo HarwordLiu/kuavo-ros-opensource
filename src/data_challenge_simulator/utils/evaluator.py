@@ -15,9 +15,9 @@ class ScoringConfig:
     tol_deg: float = 10.0
 
     # # 计分规则
-    # time_full: int = 20                    # 时间满分
-    # time_threshold_sec: int = 12           # ≤10秒得满分
-    # time_penalty_per_sec: int = 2          # 超出每秒扣2分，最低0
+    time_full: int = 20                    # 时间满分
+    time_threshold_sec: int = 12           # ≤12秒得满分
+    time_penalty_per_sec: int = 2          # 超出每秒扣2分，最低0
 
 @dataclass
 class ScoringConfig3:
@@ -29,9 +29,9 @@ class ScoringConfig3:
     tol_deg: float = 10.0
 
     # # 计分规则
-    # time_full: int = 20                    # 时间满分
-    # time_threshold_sec: int = 30           # ≤10秒得满分
-    # time_penalty_per_sec: int = 2          # 超出每秒扣2分，最低0
+    time_full: int = 20                    # 时间满分
+    time_threshold_sec: int = 30           # ≤10秒得满分
+    time_penalty_per_sec: int = 2          # 超出每秒扣2分，最低0
 class ScoringEvaluator:
     def __init__(
         self,
@@ -53,7 +53,7 @@ class ScoringEvaluator:
         self.final_pos_awarded: bool = False
         self.final_ori_awarded: bool = False
         # self.final_awarded: bool = False        
-        # self.start_time: float = time.time()
+        self.start_time: float = time.time()
 
     def reset(self, start_time: Optional[float] = None):
         self.score = 0
@@ -65,19 +65,19 @@ class ScoringEvaluator:
         self.final_pos_awarded = False
         self.final_ori_awarded = False
         # self.final_awarded = False 
-        # self.start_time = time.time() if start_time is None else start_time
+        self.start_time = time.time() if start_time is None else start_time
 
     def evaluate(
         self,
         pos_xyz: Tuple[float, float, float],
         quat_xyzw: Tuple[float, float, float, float],
-        # now: Optional[float] = None,
+        now: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         输入：当前位置/朝向，返回一次评估结果。
         只做纯逻辑，不做任何发布/IO。
         """
-        # now = time.time() if now is None else now
+        now = time.time() if now is None else now
         result = {
             # 判定输出
             "in_region": False,
@@ -97,12 +97,12 @@ class ScoringEvaluator:
             # 计分输出
             "score_delta": 0,
             "total_score": self.score,
-            # "elapsed_sec": now - self.start_time,
+            "elapsed_sec": now - self.start_time,
             "intermediate_pos_added": False,
             "intermediate_ori_added": False,
             "final_pos_added": False,   # 30 或 0
             "final_ori_added": False,   # 10 或 0
-            # "time_score_added": 0,    # 时间分
+            "time_score_added": 0,    # 时间分
         }
 
         try:
@@ -134,8 +134,8 @@ class ScoringEvaluator:
             # 位置40分（只加一次）
             if not self.intermediate_pos_awarded:
                 self.intermediate_pos_awarded = True
-                self.score += 40
-                result["score_delta"] += 40
+                self.score += 30
+                result["score_delta"] += 30
                 # result["intermediate_triggered"] = True  # 本帧有中间点得分事件
                 result["intermediate_pos_added"] = True
 
@@ -154,8 +154,8 @@ class ScoringEvaluator:
             # 位置40分（只加一次）
             if not self.final_pos_awarded:
                 self.final_pos_awarded = True
-                self.score += 40
-                result["score_delta"] += 40
+                self.score += 30
+                result["score_delta"] += 30
                 # result["final_triggered"] = True  # 本帧有中间点得分事件
                 result["final_pos_added"] = True
 
@@ -177,17 +177,17 @@ class ScoringEvaluator:
             result["need_stop_conveyor"] = True
 
             # # 时间分
-            # elapsed = now - self.start_time
-            # if elapsed <= self.cfg.time_threshold_sec:
-            #     time_score = self.cfg.time_full
-            # else:
-            #     over = elapsed - self.cfg.time_threshold_sec
-            #     time_score = max(0, self.cfg.time_full - over * self.cfg.time_penalty_per_sec)
+            elapsed = now - self.start_time
+            if elapsed <= self.cfg.time_threshold_sec:
+                time_score = self.cfg.time_full
+            else:
+                over = elapsed - self.cfg.time_threshold_sec
+                time_score = max(0, self.cfg.time_full - over * self.cfg.time_penalty_per_sec)
 
-            # self.score += time_score
-            # result["score_delta"] += time_score
-            # result["elapsed_sec"] = elapsed
-            # result["time_score_added"] = int(time_score)
+            self.score += time_score
+            result["score_delta"] += time_score
+            result["elapsed_sec"] = elapsed
+            result["time_score_added"] = int(time_score)
         else:
             # 未成功阶段建议持续发 False
             if not self.already_reported_success:

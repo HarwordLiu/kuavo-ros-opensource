@@ -13,7 +13,9 @@ class ObjectPose:
             "shampoo3": "/mujoco/shampoo3/pose",
             "shampoo4": "/mujoco/shampoo4/pose",
             "item1": "/mujoco/item1/pose",
-            "item2": "/mujoco/item2/pose"
+            "item2": "/mujoco/item2/pose",
+            "left_bin_A": "/mujoco/left_bin_A/pose",
+            "left_bin_B": "/mujoco/left_bin_B/pose",
         }
 
         self.pose_data = {name: None for name in self.name_to_topic}

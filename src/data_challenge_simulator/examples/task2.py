@@ -6,9 +6,9 @@ if data_challenge_simulator_dir not in sys.path:
 
 from kuavo_humanoid_sdk import KuavoSDK, KuavoRobot, KuavoRobotVision, KuavoManipulationMpcFrame, KuavoRobotState, KuavoPose
 import time
-from utils.gripper_controller import GripperController  # 使用高频版本
+from utils.gripper_controller import GripperController
 from utils.conveyor_controller import ConveyorController
-from utils.trajectory_controller import TrajectoryController  # 新增的轨迹控制器
+from utils.trajectory_controller import TrajectoryController
 from utils.object_pos import ObjectPose
 from utils.object_randomizer import ObjectRandomizer
 from utils.utils import Utils
@@ -42,12 +42,12 @@ def main():
     grasp_region = [
         (marker1_pos[0]-0.07, marker1_pos[0]+0.07),   # x 范围
         (marker1_pos[1]-0.07, marker1_pos[1]+0.07),   # y 范围
-        (0.9, 1.2)  # z 范围
+        (0.95, 1.02)  # z 范围
     ]
     target_region = [
-        (marker2_pos[0]-0.03, marker2_pos[0]+0.03),   # x 范围
-        (marker2_pos[1]-0.03, marker2_pos[1]+0.03),   # y 范围
-        (0.85, 1.1)  # z 范围
+        (marker2_pos[0]-0.035, marker2_pos[0]+0.035),   # x 范围
+        (marker2_pos[1]-0.035, marker2_pos[1]+0.035),   # y 范围
+        (0.85, 0.98)  # z 范围
     ]
 
 
@@ -67,7 +67,7 @@ def main():
 
     try:
         # 随机物体位置
-        y_target = random.uniform(-0.25, -0.25)  #-0.2-0.5
+        y_target = random.uniform(-0.5, -0.2)  #-0.2-0.5
         random_pos = ObjectRandomizer()
         result = random_pos.randomize_object_position(
             object_name='box_grab',
@@ -84,7 +84,7 @@ def main():
             
         robot.control_head(yaw=0, pitch=math.radians(12))
 
-        # 预抓位1 - 使用高频轨迹控制器
+        # 预抓位1
         q_target1 = [0, 0, 0, 0, -90, 0, 0,   80, -30, 0, -130, 45, 0, 0]
         q_list1 = Utils.interpolate_joint_trajectory(q_target1, num=num) 
             
@@ -99,15 +99,14 @@ def main():
 
         time.sleep(2.5)
         conveyor_ctrl.control_speed(0.1)
-        time_pause = 1.5
-        if y_target >= -0.25:
-            time_pause = 3
-        elif -0.25 > y_target >= -0.4:
-            time_pause = 2
-        elif -0.4 > y_target:
-            time_pause = 1.5
+        time_pause_base = 2.4
 
-        time.sleep(time_pause)
+        def time_pause(y_target):
+            time_pause_sec = (y_target + 0.5)*10 + time_pause_base
+            return time_pause_sec
+        
+        time_pause_sec = time_pause(y_target=y_target)
+        time.sleep(time_pause_sec)
         # 计算俯仰角并调整姿态
         curr_q_rot = robot_state.arm_joint_state().position
         l_pose_rot, r_pose_rot = robot.arm_fk(curr_q_rot)
@@ -156,15 +155,13 @@ def main():
         time.sleep(0.5)
         
 
-        # 移动到称 - 使用高频轨迹控制器
+        # 移动到称
         q_target3 = [80, -30, 0, -130, -87, 0, 0,   -10, -5, 25, -130, 87, 0, 0]
         q_list3 = Utils.interpolate_joint_trajectory(q_target3, q_target_deg, num=num) 
 
         q_target4 = [50, 0, -20, -150, -90, 0, 0,   -30, 30, 37, -70, 87, 0, 0]
         q_list4 = Utils.interpolate_joint_trajectory(q_target4, q_target3, num=num)
 
-
-        # 使用高频轨迹控制器
         traj_ctrl.execute_trajectory(q_list3, sleep_time=0.02)
         # traj_ctrl.execute_trajectory(q_list4, sleep_time=0.02)
 
@@ -187,7 +184,7 @@ def main():
 
         time.sleep(0.5)
         
-        # 右夹爪释放 - 高频发布
+        # 右夹爪释放
         gripper_ctrl.control_right_gripper(0)
         time.sleep(0.5)
 
@@ -204,7 +201,7 @@ def main():
         elif in_region1 and is_front1:
             print("第一次成功✅")
 
-        # 左手开始抓取 - 使用高频轨迹控制器
+        # 左手开始抓取
         q_target5 = [20, 0, -25, -140, -87, 0, 0,   -10, 0, 0, -140, 87, 0, 0]
         q_list5 = Utils.interpolate_joint_trajectory(q_target5, pose_grasp_deg, num=num) 
         
@@ -217,7 +214,7 @@ def main():
         curr_q1 = robot_state.arm_joint_state().position
         l_pose1, r_pose1 = robot.arm_fk(curr_q1)
         pos_box1 = obj_pos.get_position("box_grab")
-        l_pose_new1 = [pos_box1[0]+0.05, pos_box1[1]-0.03, l_pose1.position[2] + robot_state.robot_position()[2]]
+        l_pose_new1 = [pos_box1[0]+0.04, pos_box1[1]-0.025, l_pose1.position[2] + robot_state.robot_position()[2]]
         pose1_left, _ = Utils.compute_pose(
             robot,
             robot_state,
@@ -230,15 +227,12 @@ def main():
         q_target_deg1 = [math.degrees(x) for x in q_target1]
         q_list_target1 = Utils.interpolate_joint_trajectory(q_target_deg1, q_target5, num=num)
         
-        # 使用高频轨迹控制器执行精确抓取动作
+        # 抓取
         traj_ctrl.execute_trajectory(q_list_target1, sleep_time=0.02)
 
         time.sleep(0.5)
-        # 左夹爪抓取 - 高频发布
+        # 左夹爪抓取 
         gripper_ctrl.control_left_gripper(160)
-
-        # # 左手放至目标位置 - 使用高频轨迹控制器
-
         print("左手放置到目标位置")
 
         pose_final = [x_final, y_final, z_final]

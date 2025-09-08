@@ -47,17 +47,35 @@ def main():
         (0.85, 0.98)  # z 范围
     ]
 
-    offset_grasp= [0.05, -0.08, 0]
+    offset_grasp= [0.04, -0.08, 0]
     x_grasp = marker1_pos[0] + offset_grasp[0]
     y_grasp = marker1_pos[1] + offset_grasp[1]
     z_grasp = 1.225 + offset_grasp[2]
     ori_grasp = (0.3775488479595588, -0.6276236743210512, -0.626605010384081, 0.2662922300738775)
 
-    offset_final= [0.0275, -0.07, 0]
+    offset_final= [0.0225, -0.0725, 0]
     x_final = marker2_pos[0] + offset_final[0]
     y_final = marker2_pos[1] + offset_final[1]
     z_final = 1.175 + offset_final[2]
     ori_final = (-0.6139610282920115, -0.512807918741992, 0.35133137051614377, 0.48646290948578014)
+
+    if 0.06>= marker1_pos[1] >=0.035:
+        y_grasp = marker1_pos[1] + offset_grasp[1] +0.03
+    elif 0.035> marker1_pos[1] >=0:
+        y_grasp = marker1_pos[1] + offset_grasp[1] +0.025
+    elif -0.035<= marker1_pos[1]<=-0.06:
+        y_grasp = marker1_pos[1] + offset_grasp[1] -0.02
+
+    if 0.06>= marker2_pos[1] >=0.035:
+        y_grasp = marker1_pos[1] + offset_grasp[1] +0.03
+
+
+    if 0.38<= marker2_pos[0] <=0.45 and -0.41>= marker2_pos[1]>=-0.45:
+        x_final = x_final = marker2_pos[0] + offset_final[0]-0.005
+        y_final = marker2_pos[1] + offset_final[1]+0.02
+    # elif 0.42< marker2_pos[0] <=0.45 and 0.42>= marker2_pos[1]>=0.45:
+    #     x_final = x_final = marker2_pos[0] + offset_final[0]-0.005
+    #     y_final = marker2_pos[1] + offset_final[1]+0.015
 
     try:
         # 随机物体位置
@@ -66,7 +84,7 @@ def main():
             object_name='box_grab',
             position_ranges={
                 'x': [0.7, 0.9],    # x轴范围
-                'y': [0.60, 0.62],   # y轴范围  48-63
+                'y': [0.48, 0.63],   # y轴范围  48-63
                 'z': [0.95, 0.95]     # z轴范围
             }
         )
@@ -86,13 +104,13 @@ def main():
         robot.control_head(yaw=0, pitch=math.radians(12))
 
         # 预抓位
-        q_target1 = [0, 0, 0, -105, -70, 0, 0,   30, 0, 0, -140, 90, 0, 0]
+        q_target1 = [0, 0, 0, -105, -70, 0, 0,   50, 0, 0, -140, 90, 0, 0]
         q_list1 = Utils.interpolate_joint_trajectory(q_target1, num=num) 
         
-        q_target2 = [-10, 15, 25, -100, -120, 0, 0,   30, 0, 0, -120, 90, 0, 0]
+        q_target2 = [-10, 15, 25, -100, -120, 0, 0,   50, 0, 0, -120, 90, 0, 0]
         q_list2 = Utils.interpolate_joint_trajectory(q_target2, q_target1, num=num)
 
-        q_target3 = [-10, 15, 25, -95, -180, 15, -20,   30, 0, 0, -140, 90, 0, 0]
+        q_target3 = [-10, 15, 25, -95, -180, 15, -20,   50, 0, 0, -140, 90, 0, 0]
         q_list3 = Utils.interpolate_joint_trajectory(q_target3, q_target2, num=num)
 
         print("双手移动到初始位置,传送带启动")
@@ -110,10 +128,12 @@ def main():
         offset = 0.0375
         if 0.48<= pos_box[1] <= 0.53:
             offset = 0.0125
-        elif 0.62>=pos_box[1] >= 0.60:
+        elif pos_box[1] >= 0.60:
             offset = 0.05
+
+        if 0.62>=pos_box[1] >= 0.60 and 0<= marker1_pos[1]:
             y_grasp = marker1_pos[1] + offset_grasp[1] + 0.0225
-        elif pos_box[1]>0.62:
+        elif pos_box[1]>0.62 and 0<= marker1_pos[1]:
             y_grasp = marker1_pos[1] + offset_grasp[1] + 0.035
 
         l_pose_new = [l_pose.position[0], pos_box[1]+offset, l_pose.position[2] + robot_state.robot_position()[2]+0.05]
@@ -185,12 +205,12 @@ def main():
 
         if not (in_region1 and is_front1):
             all_success = False
-            print("第一次失败❌")
+            print("❌ 第一次失败 ❌")
         elif in_region1 and is_front1:
-            print("第一次成功✅")
+            print("✅ 第一次成功 ✅")
 
         # 右臂动作
-        q_target7 = [-10, 5, 0, -105, -180, 25, -20,     15, 0, 20, -140, 90, 0, 0]
+        q_target7 = [-10, 5, 0, -105, -180, 25, -20,     15, 0, 25, -140, 90, 0, 0]
         q_list7 = Utils.interpolate_joint_trajectory(q_target7, q_target6, num=num)
 
         q_target8 = [-10, 5, 0, -105, -180, 25, -20,         10, 0, 20, -110, 90, 0, -15]
@@ -280,16 +300,16 @@ def main():
 
         if not (in_region2 and is_front2):
             all_success = False
-            print("第二次失败❌")
+            print("❌ 第二次失败 ❌")
         elif in_region2 and is_front2:
-            print("第二次成功✅")
+            print("✅ 第二次成功 ✅")
         # 检查任务完成情况
         if all_success:
-            print("\033[92m✅ 任务成功\033[0m")
+            print("\033[92m✅ 任务成功 ✅\033[0m")
             with open("task_result.txt", "w") as f:
                 f.write("success")
         else:
-            print("\033[91m❌ 任务失败\033[0m")
+            print("\033[91m❌ 任务失败 ❌\033[0m")
             with open("task_result.txt", "w") as f:
                 f.write("fail")
 
@@ -316,8 +336,8 @@ if __name__ == "__main__":
                 "attributes": {
                     "pos": {  # 基于 (0.52, -0.50, 0.8721)
                         "per_dim": [
-                            {"uniform": [0.48, 0.52]},    # x
-                            {"uniform": [-0.05, 0]},  # y
+                            {"uniform": [0.42, 0.52]},    # x 48-52
+                            {"uniform": [-0.05, 0.05]},  # y -5-0
                             {"set": 0.8721}               # z 固定
                         ]
                     }
@@ -336,8 +356,8 @@ if __name__ == "__main__":
                 "attributes": {
                     "pos": {  # 基于 (0.42, -0.03, 0.8721)
                         "per_dim": [
-                            {"uniform": [0.48, 0.56]},    # x
-                            {"uniform": [-0.58, -0.48]},   # y
+                            {"uniform": [0.39, 0.54]},    # x
+                            {"uniform": [-0.56, -0.42]},   # y
                             {"set": 0.8721}               # z 固定
                         ]
                     }
@@ -386,6 +406,6 @@ if __name__ == "__main__":
         out_path="/root/kuavo_ws/src/data_challenge_simulator/models/biped_s45/xml/scene1.xml",
         config=cfg,
     )
-
     print("changed:", n_changed)
+    
     main()
