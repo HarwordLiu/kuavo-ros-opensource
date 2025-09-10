@@ -3,7 +3,7 @@
   <include file="biped_s45.xml" />
   <statistic center="0 0 1" extent="1.8" />
   <visual>
-    <headlight diffuse="0.3372933216 0.5607604491 0.3929827844" ambient="0.1415423426 0.03740521611 0.224657027" specular="0.05549447752 0.08866089108 0.02249354228" />
+    <headlight diffuse="0.4882287282 0.4397204659 0.4202613418" ambient="0.03428803761 0.1814195674 0.2873575305" specular="0.1257404269 0.1162631161 0.04374096355" />
     <rgba haze="0.15 0.25 0.35 1" />
     <global azimuth="160" elevation="-20" />
   </visual>
@@ -57,19 +57,19 @@
 
     <body name="box_grab" pos="0.5 -0.2 0.95">
       <freejoint name="box_grab" />
-      <geom name="box_on_belt" type="cylinder" size="0.025 0.08" mass="1e-2" friction="1.5 0.005 0.0001" rgba="0.4243492533 0.522572214 0.6053554951 1" pos="0 0 0" />
+      <geom name="box_on_belt" type="cylinder" size="0.025 0.08" mass="1e-2" friction="1.5 0.005 0.0001" rgba="0.03029393127 0.5485955991 0.737191958 1" pos="0 0 0" />
 
-      <geom name="box_base_disk" type="box" size="0.06 0.06 0.01" mass="1e-2" friction="1 0.005 0.0001" rgba="0.2970359467 0.7321275677 0.9067031885 1" pos="0 0 -0.081" />
+      <geom name="box_base_disk" type="box" size="0.06 0.06 0.01" mass="1e-2" friction="1 0.005 0.0001" rgba="0.6081499112 0.2401331797 0.3236535369 1" pos="0 0 -0.081" />
     </body>
 
 
 
-    <body name="marker1" pos="0.4055284028 0.07538576307 0.89">
-      <geom type="box" size="0.07 0.07 0.02" rgba="0.6088754066 0.02190160908 0.2440714542 1" />
+    <body name="marker1" pos="0.3633312264 0.1059698158 0.89">
+      <geom type="box" size="0.07 0.07 0.02" rgba="0.5914412312 0.3625705435 0.8393845245 1" />
     </body>
 
-    <body name="marker2" pos="0.3321284746 0.6070726977 0.871">
-      <geom type="box" size="0.035 0.035 0.001" rgba="0.2614940684 0.651630845 0.1152461521 1" contype="0" conaffinity="0" />
+    <body name="marker2" pos="0.4320011275 0.5174589255 0.871">
+      <geom type="box" size="0.035 0.035 0.001" rgba="0.6549909324 0.8745953528 0.2512159794 1" contype="0" conaffinity="0" />
     </body>
 
 

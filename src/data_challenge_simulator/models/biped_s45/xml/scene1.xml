@@ -3,7 +3,7 @@
   <include file="biped_s45.xml" />
   <statistic center="0 0 1" extent="1.8" />
   <visual>
-    <headlight diffuse="0.2429936533 0.3981250434 0.4306178356" ambient="0.2100370714 0.1417052361 0.1487317905" specular="0.1130855469 0.1884949042 0.1197704676" />
+    <headlight diffuse="0.3696739451 0.2482578803 0.2388547334" ambient="0.006319669671 0.2520299731 0.02569395596" specular="0.1979060995 0.08822626368 0.08296584751" />
     <rgba haze="0.15 0.25 0.35 1" />
     <global azimuth="160" elevation="-20" />
   </visual>
@@ -72,18 +72,18 @@
 
     <body name="box_grab" pos="1 0.52 0.95">
       <freejoint name="box_grab" />
-      <geom name="box_on_belt" type="cylinder" size="0.0235 0.08" mass="1e-2" friction="1.0 0.005 0.0001" rgba="0.7687535939 0.6424907715 0.3534000669 1" pos="0 0 0" />
+      <geom name="box_on_belt" type="cylinder" size="0.0235 0.08" mass="1e-2" friction="1.0 0.005 0.0001" rgba="0.9229715101 0.2705756917 0.9711579772 1" pos="0 0 0" />
 
-      <geom name="box_base_disk" type="box" size="0.06 0.06 0.01" mass="1e-2" friction="1 0.005 0.0001" rgba="0.1561724122 0.3672354453 0.6922098161 1" pos="0 0 -0.081" />
+      <geom name="box_base_disk" type="box" size="0.06 0.06 0.01" mass="1e-2" friction="1 0.005 0.0001" rgba="0.1204532557 0.01185128764 0.2910376632 1" pos="0 0 -0.081" />
     </body>
 
 
-    <body name="marker1" pos="0.502657231 -1.606884223e-05 0.8721">
-      <geom type="box" size="0.035 0.035 0.001" rgba="0.8911888131 0.3592603018 0.9690457418 1" contype="0" conaffinity="0" />
+    <body name="marker1" pos="0.5044699376 -0.04661928879 0.8721">
+      <geom type="box" size="0.035 0.035 0.001" rgba="0.3232556914 0.3522817442 0.7132028686 1" contype="0" conaffinity="0" />
     </body>
 
-    <body name="marker2" pos="0.494768857 -0.5118696563 0.8721">
-      <geom type="box" size="0.035 0.035 0.001" rgba="0.7537227305 0.6814813722 0.5648850806 1" contype="0" conaffinity="0" />
+    <body name="marker2" pos="0.4345325921 -0.5593879154 0.8721">
+      <geom type="box" size="0.035 0.035 0.001" rgba="0.9578292238 0.973031716 0.2746706597 1" contype="0" conaffinity="0" />
     </body>
 
 

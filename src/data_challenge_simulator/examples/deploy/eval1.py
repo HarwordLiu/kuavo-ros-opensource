@@ -84,7 +84,7 @@ class SimulatorTask1():
                 front_world_dir='z',
                 tol_deg=10.0,
                 time_full=20,
-                time_threshold_sec=15,
+                time_threshold_sec=13,
                 time_penalty_per_sec=2,
                 # intermediate_bonus=40,
             ),

@@ -4,7 +4,7 @@ data_challenge_simulator_dir = os.path.dirname(current_dir)
 if data_challenge_simulator_dir not in sys.path:
     sys.path.insert(0, data_challenge_simulator_dir)
 
-from kuavo_humanoid_sdk import KuavoSDK, KuavoRobot, KuavoRobotVision,KuavoManipulationMpcFrame, KuavoRobotState, KuavoPose
+from kuavo_humanoid_sdk import KuavoSDK, KuavoRobot, KuavoRobotState
 import time
 from utils.gripper_controller import GripperController  # 使用高频版本
 from utils.conveyor_controller import ConveyorController

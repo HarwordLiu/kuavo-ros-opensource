@@ -50,16 +50,7 @@ class SimulatorTask2():
         # 区域阈值
         self.seed = seed
         self.obj_pos = ObjectPose()
-        # self.target_region = [
-        #     (0.36, 0.62),   # x
-        #     (-0.6, -0.32),  # y
-        #     (0.85, 1.0)     # z
-        # ]
-        # self.intermediate_region = [
-        #     (0.38, 0.52),   # x 范围
-        #     (-0.1, 0.04),   # y 范围
-        #     (0.85, 1.0)  # z 范围
-        # ]
+        
         self.marker1_pos = self.obj_pos.wait_for_position("marker1", timeout=5.0)
         self.marker2_pos = self.obj_pos.wait_for_position("marker2", timeout=5.0)
 
@@ -84,7 +75,7 @@ class SimulatorTask2():
                 front_world_dir='z',
                 tol_deg=10.0,
                 time_full=20,
-                time_threshold_sec=15,
+                time_threshold_sec=12,
                 time_penalty_per_sec=2,
                 # intermediate_bonus=40,
             ),

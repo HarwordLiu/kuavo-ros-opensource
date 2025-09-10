@@ -23,6 +23,7 @@ ROS_TOPICS = [
     '/cam_h/depth/image_raw/compressedDepth',
     '/cam_r/depth/image_rect_raw/compressedDepth',
     '/cam_l/depth/image_rect_raw/compressedDepth',
+    '/cmd_pose_world'
 ]
 
 def wait_for_topics(timeout=15):

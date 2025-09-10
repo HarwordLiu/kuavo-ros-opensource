@@ -21,7 +21,7 @@ CYAN  = "\033[96m"
 YELLOW= "\033[93m"
 RESET = "\033[0m"
 
-cfg = {
+cfg1 = {
     "rules": [
         # ---- marker1：位置 + 颜色 ----
         {
@@ -52,6 +52,78 @@ cfg = {
                         {"uniform": [0.39, 0.54]},    # x
                         {"uniform": [-0.56, -0.42]},   # y
                         {"set": 0.8721}               # z 固定
+                    ]
+                }
+            }
+        },
+        {
+            "select": ".//body[@name='marker2']/geom",
+            "attributes": {
+                "rgba": {"color": {"alpha": [1.0, 1.0]}}
+            }
+        },
+
+        # ---- box_grab 两个几何的颜色 ----
+        {
+            "select": ".//geom[@name='box_on_belt']",
+            "attributes": {
+                "rgba": {"color": {"alpha": [1.0, 1.0]}}
+            }
+        },
+        {
+            "select": ".//geom[@name='box_base_disk']",
+            "attributes": {
+                "rgba": {"color": {"alpha": [1.0, 1.0]}}
+            }
+        },
+
+        # ---- 光照与视角 ----
+        {
+            "select": ".//visual/headlight",
+            "attributes": {
+                "diffuse": {"uniform": [0.2, 0.6], "ndim": 3},
+                "ambient": {"per_dim": [
+                {"uniform": [0.0, 0.3]},
+                {"uniform": [0.0, 0.3]},
+                {"uniform": [0.0, 0.3]}
+                ]},
+                "specular": {"uniform": [0.0, 0.2], "ndim": 3}
+            }
+        }
+    ]
+}
+
+cfg2 = {
+    "rules": [
+        # ---- marker1：位置 + 颜色 ----
+        {
+            "select": ".//body[@name='marker1']",
+            "attributes": {
+                "pos": {  # 基于 (0.52, -0.50, 0.8721)
+                    "per_dim": [
+                        {"uniform": [0.35, 0.45]},    # x
+                        {"uniform": [0.05, 0.15]},  # y
+                        {"set": 0.89}               # z 固定
+                    ]
+                }
+            }
+        },
+        {
+            "select": ".//body[@name='marker1']/geom",
+            "attributes": {
+                "rgba": {"color": {"alpha": [1.0, 1.0]}}  # 随机 RGB，alpha=1
+            }
+        },
+
+        # ---- marker2：位置 + 颜色 ----
+        {
+            "select": ".//body[@name='marker2']",
+            "attributes": {
+                "pos": {  # 基于 (0.42, -0.03, 0.8721)
+                    "per_dim": [
+                        {"uniform": [0.3, 0.50]},    # x
+                        {"uniform": [0.5, 0.65]},   # y
+                        {"set": 0.871}               # z 固定
                     ]
                 }
             }
@@ -146,14 +218,32 @@ def run_task(task_id: int, headless: bool):
 
     # 统计所有轮次的分数
     scores = []
+    cfg_map = {
+        1: cfg1,
+        2: cfg2,
+        # 3: cfg3,
+        # 4: cfg4,
+    }
+
+    scene_map = {
+        1: "scene1.xml",
+        2: "scene2.xml",
+        3: "scene3.xml",
+        4: "scene4.xml",
+    }
+
+    cfg = cfg_map[task_id]
+    scene_file = scene_map[task_id]
+
+    scene_path = f"/root/kuavo_ws/src/data_challenge_simulator/models/biped_s45/xml/{scene_file}"
 
     # === 无限循环，直到 Ctrl+C 结束 ===
     cycle_idx = 1
     while True:
         seed = 42 + cycle_idx
         n_changed = randomize_mjcf(
-            in_path="/root/kuavo_ws/src/data_challenge_simulator/models/biped_s45/xml/scene1.xml",
-            out_path="/root/kuavo_ws/src/data_challenge_simulator/models/biped_s45/xml/scene1.xml",
+            in_path=scene_path,
+            out_path=scene_path,
             config=cfg,
             seed = seed
         )
