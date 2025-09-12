@@ -3,7 +3,7 @@
   <include file="biped_s45.xml" />
   <statistic center="0 0 1" extent="1.8" />
   <visual>
-    <headlight diffuse="0.3696739451 0.2482578803 0.2388547334" ambient="0.006319669671 0.2520299731 0.02569395596" specular="0.1979060995 0.08822626368 0.08296584751" />
+    <headlight diffuse="0.4519511854 0.5587635807 0.491844709" ambient="0.2204497633 0.1455927841 0.03153467625" specular="0.1936840656 0.1134456507 0.0594071439" />
     <rgba haze="0.15 0.25 0.35 1" />
     <global azimuth="160" elevation="-20" />
   </visual>
@@ -54,7 +54,7 @@
 
     <body name="belt_plate2" pos="0 -3 0.85">  
       <inertial pos="0 0 0" mass="1e-1" diaginertia="1e-6 1e-6 1e-6" />
-      <geom name="belt_geom2" type="box" size="3.3 0.3 0.01" material="belt_mat" friction="1.0 0.005 0.0001" />
+      <geom name="belt_geom2" type="box" size="2.7 0.3 0.01" material="belt_mat" friction="1.0 0.005 0.0001" />
     </body>
 
     <body name="belt_plate3" pos="3 -1.15 0.85">  
@@ -67,23 +67,44 @@
       <geom name="belt_geom4" type="box" size="0.3 1.545 0.01" material="belt_mat" friction="1.0 0.005 0.0001" />
     </body>
 
+    <body name="belt_plate5" pos="2.7 -2.7 0.85">  
+      <inertial pos="0 0 0" mass="1e-1" diaginertia="1e-6 1e-6 1e-6" />
+      <geom name="belt_geom5" type="cylinder" size="0.6 0.009" material="belt_mat" friction="1.0 0.005 0.0001" contype="0" conaffinity="0" />
+    </body>
+
+    <body name="belt_plate6" pos="-2.7 -2.7 0.85">  
+      <inertial pos="0 0 0" mass="1e-1" diaginertia="1e-6 1e-6 1e-6" />
+      <geom name="belt_geom6" type="cylinder" size="0.6 0.009" material="belt_mat" friction="1.0 0.005 0.0001" contype="0" conaffinity="0" />
+    </body>
+
+    <body name="belt_plate7" pos="2.4 -2.4 0.43">  
+      <inertial pos="0 0 0" mass="1e-1" diaginertia="1e-6 1e-6 1e-6" />
+      <geom name="belt_geom7" type="box" size="0.3 0.3 0.43" material="ground_mat" friction="1.0 0.005 0.0001" contype="0" conaffinity="0" />
+    </body>
+
+    <body name="belt_plate8" pos="-2.4 -2.4 0.43">  
+      <inertial pos="0 0 0" mass="1e-1" diaginertia="1e-6 1e-6 1e-6" />
+      <geom name="belt_geom8" type="box" size="0.3 0.3 0.43" material="ground_mat" friction="1.0 0.005 0.0001" contype="0" conaffinity="0" />
+    </body>
+
+
 
 
 
     <body name="box_grab" pos="1 0.52 0.95">
       <freejoint name="box_grab" />
-      <geom name="box_on_belt" type="cylinder" size="0.0235 0.08" mass="1e-2" friction="1.0 0.005 0.0001" rgba="0.9229715101 0.2705756917 0.9711579772 1" pos="0 0 0" />
+      <geom name="box_on_belt" type="cylinder" size="0.0235 0.08" mass="1e-2" friction="1.0 0.005 0.0001" rgba="0.2294433621 0.9922186461 0.8507451812 1" pos="0 0 0" />
 
-      <geom name="box_base_disk" type="box" size="0.06 0.06 0.01" mass="1e-2" friction="1 0.005 0.0001" rgba="0.1204532557 0.01185128764 0.2910376632 1" pos="0 0 -0.081" />
+      <geom name="box_base_disk" type="box" size="0.06 0.06 0.01" mass="1e-2" friction="1 0.005 0.0001" rgba="0.7119069266 0.1545617524 0.6510382376 1" pos="0 0 -0.081" />
     </body>
 
 
-    <body name="marker1" pos="0.5044699376 -0.04661928879 0.8721">
-      <geom type="box" size="0.035 0.035 0.001" rgba="0.3232556914 0.3522817442 0.7132028686 1" contype="0" conaffinity="0" />
+    <body name="marker1" pos="0.513645913 0.008879557725 0.8721">
+      <geom type="box" size="0.035 0.035 0.001" rgba="0.3898620423 0.3387165457 0.2759900628 1" contype="0" conaffinity="0" />
     </body>
 
-    <body name="marker2" pos="0.4345325921 -0.5593879154 0.8721">
-      <geom type="box" size="0.035 0.035 0.001" rgba="0.9578292238 0.973031716 0.2746706597 1" contype="0" conaffinity="0" />
+    <body name="marker2" pos="0.4566115882 -0.4631354469 0.8721">
+      <geom type="box" size="0.035 0.035 0.001" rgba="0.8316027301 0.04162858368 0.02264756733 1" contype="0" conaffinity="0" />
     </body>
 
 

@@ -1,6 +1,4 @@
-# Kuavo Data Challenge Simulator - 简易安装教程
-
-> ⚠️ **通用安装教程请参考 main branch**
+# Kuavo Data Challenge Simulator - 安装教程
 
 ## 1. 克隆代码仓库
 ```bash
@@ -10,7 +8,7 @@ git checkout opensource/kuavo-data-challenge
 ````
 
 ## 2. 启动 Docker 环境
-- docker镜像可以使用`./docker/Dockerfile`构建，或者下载已经编译好的镜像：
+- docker镜像可以使用`./docker/Dockerfile`构建，或者下载已经编译好的镜像(推荐)：
 
 ```bash  
 wget https://kuavo.lejurobot.com/docker_images/kuavo_opensource_mpc_wbc_img_v0.6.1.tar.gz
@@ -76,7 +74,7 @@ source devel/setup.zsh
 ## 如何使用
 ### 模型推理测试
 
-⚠️ 此readme只包含推理时仿真侧的操作，推理侧具体请查看kuavo-data-challenge仓库的readme
+⚠️ 此文档只包含推理时仿真侧的操作，推理侧具体请查看kuavo_data_challenge仓库的README文档
 
 进入data_challenge_simulator/examples/deploy文件夹，运行
 ```bash

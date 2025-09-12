@@ -64,32 +64,70 @@ def wait_for_topics(timeout=15):
     print(f"[WARNING] 等待话题超时，继续执行...")
     return False
 
-def run_only_task(task_id: int):
-    task_script = os.path.join(SCRIPT_DIR, f"task{task_id}.py")
+def run_only_task(round_id: int,task_id: int,headless: bool):
+    start_time = time.time()
+
     launch_file = f"load_kuavo_mujoco_sim{task_id}.launch"
+    task_script = os.path.join(SCRIPT_DIR, f"task{task_id}.py")
 
-    print(f"[INFO] 正在运行任务 {task_id}（不录制 rosbag）")
+    if headless:
+        # # 设置 DISPLAY 环境变量
+        task_env = os.environ.copy()
+        # task_env["DISPLAY"] = display_num
+        task_env["MUJOCO_HEADLESS"] = "1"
+    else:
+        task_env = os.environ.copy()  # 不改变 DISPLAY
 
-    # 启动 Mujoco 仿真环境
+    # 启动仿真环境
     launch_process = subprocess.Popen(
         ['roslaunch', 'data_challenge_simulator', launch_file],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
-        preexec_fn=os.setsid
+        preexec_fn=os.setsid,
+        env = task_env
     )
-    print(f"[INFO] 启动仿真环境：{launch_file}")
-    time.sleep(3)  # 给仿真环境更多启动时间
+    print(f"[INFO] Round {round_id}: Launched {launch_file}")
+    time.sleep(2)
 
-    # 启动任务脚本
-    print(f"[INFO] 运行任务脚本：{task_script}")
-    subprocess.run(['python3', task_script])
+    # 在后台启动任务脚本但不等待完成
+    print(f"[INFO] Round {round_id}: Starting {task_script} in background")
+    task_process = subprocess.Popen(['python3', task_script])
 
-    # 关闭仿真环境
-    print(f"[INFO] 关闭仿真环境...")
-    os.killpg(os.getpgid(launch_process.pid), signal.SIGTERM)
+
+    # 等待任务脚本完成
+    print(f"[INFO] Round {round_id}: Waiting for task completion")
+    task_process.wait()
+
+    # 停止 rosbag 和 simulation
+    print(f"[INFO] Round {round_id}: Stopping rosbag and simulation...")
+    try:
+        os.killpg(os.getpgid(launch_process.pid), signal.SIGTERM)
+    except ProcessLookupError:
+        pass
     time.sleep(1)
 
-    print(f"[INFO] 任务 {task_id} 执行完成。\n")
+    # 判断任务是否成功
+    task_result_file = "task_result.txt"
+    is_success = False
+
+    if os.path.exists(task_result_file):
+        with open(task_result_file, "r") as f:
+            result = f.read().strip()
+            is_success = result == "success"
+        os.remove(task_result_file)
+    else:
+        print(f"[WARNING] Round {round_id}: 未生成任务结果文件，默认失败")
+
+    if not is_success:
+        print(f"[INFO] Round {round_id}: ❌ 任务失败")
+    else:
+        print(f"[INFO] Round {round_id}: ✅ 任务成功")
+
+    end_time = time.time()
+    duration = end_time - start_time
+    print(f"[{datetime.now()}] Round {round_id} finished in {duration:.2f} sec.\n")
+
+    return duration, is_success
 
 
 def run_once(round_id: int, task_id: int,headless: bool):
@@ -201,36 +239,43 @@ def main(headless):
         if record_choice not in [0, 1]:
             raise ValueError()
 
-        if record_choice == 1:
-            repeat_times = int(input("请输入采集循环次数: ").strip())
-            if repeat_times <= 0:
-                raise ValueError()
+        repeat_times = int(input("请输入循环次数: ").strip())
+        if repeat_times <= 0:
+            raise ValueError()
     except ValueError:
         print("[ERROR] 输入无效，请输入有效数字。")
         return
 
-    # 不录制模式
     if record_choice == 0:
-        run_only_task(task_id)
-        return
+        all_start_time = time.time()
+        durations = []
+        success_count = 0
+    
+        for i in range(repeat_times):
+            print(f"\n====== 🚀 Round {i+1}/{repeat_times} ======")
+            duration, is_success = run_only_task(i + 1, task_id,headless)
+            durations.append(duration)
+            if is_success:
+                success_count += 1
+            time.sleep(1)
 
-    # 录制模式
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    root_dir = os.path.join("bags", f"run_{timestamp}")
-    os.makedirs(root_dir, exist_ok=True)
-    os.chdir(root_dir)
+    if record_choice == 1:
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        root_dir = os.path.join("bags", f"run_{timestamp}")
+        os.makedirs(root_dir, exist_ok=True)
+        os.chdir(root_dir)
 
-    all_start_time = time.time()
-    durations = []
-    success_count = 0
+        all_start_time = time.time()
+        durations = []
+        success_count = 0
 
-    for i in range(repeat_times):
-        print(f"\n====== 🚀 Round {i+1}/{repeat_times} ======")
-        duration, is_success = run_once(i + 1, task_id,headless)
-        durations.append(duration)
-        if is_success:
-            success_count += 1
-        time.sleep(3)
+        for i in range(repeat_times):
+            print(f"\n====== 🚀 Round {i+1}/{repeat_times} ======")
+            duration, is_success = run_once(i + 1, task_id,headless)
+            durations.append(duration)
+            if is_success:
+                success_count += 1
+            time.sleep(3)
         
     all_end_time = time.time()
     total_time = all_end_time - all_start_time
