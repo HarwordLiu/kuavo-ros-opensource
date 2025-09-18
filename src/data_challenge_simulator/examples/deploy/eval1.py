@@ -17,6 +17,7 @@ import rospy
 from std_msgs.msg import Bool, Int32
 from std_srvs.srv import Trigger, TriggerRequest, TriggerResponse
 import numpy as np
+import json
 
 class SimulatorTask1():
     def __init__(self,seed):
@@ -66,15 +67,23 @@ class SimulatorTask1():
         self.intermediate_region = [
         (self.marker1_pos[0]-0.03, self.marker1_pos[0]+0.03),   # x 范围
         (self.marker1_pos[1]-0.03, self.marker1_pos[1]+0.03),   # y 范围
-        (0.85, 0.98)  # z 范围
+        (0.9, 0.965)  # z 范围
         ]
 
 
         self.target_region = [
         (self.marker2_pos[0]-0.035, self.marker2_pos[0]+0.035),   # x 范围
         (self.marker2_pos[1]-0.035, self.marker2_pos[1]+0.035),   # y 范围
-        (0.85, 0.98)  # z 范围
+        (0.95, 0.965)  # z 范围
         ]
+
+        # 记录分项是否达成
+        self.comp_intermediate_pos = False
+        self.comp_intermediate_ori = False
+        self.comp_final_pos = False
+        self.comp_final_ori = False
+        self.comp_time_score = 0
+
 
         self.evaluator = ScoringEvaluator(
             ScoringConfig(
@@ -219,6 +228,18 @@ class SimulatorTask1():
                 # 调用通用评估器
                 out = self.evaluator.evaluate(pos, ori, now=time.time())
 
+                # 累计分项达成
+                if out.get("intermediate_pos_added"): self.comp_intermediate_pos = True
+                if out.get("intermediate_ori_added"): self.comp_intermediate_ori = True
+                if out.get("final_pos_added"):        self.comp_final_pos = True
+                if out.get("final_ori_added"):        self.comp_final_ori = True
+
+                # 时间得分：如果 evaluator 是“增量”，这里累加；如果是“最终值”，也能覆盖
+                ts_add = out.get("time_score_added")
+                if isinstance(ts_add, (int, float)):
+                    self.comp_time_score += float(ts_add)
+
+
                 # 按评估器的“建议标志”做 ROS 行为
                 if out["need_publish_success_true"]:
                     rospy.loginfo("[sim] ✅ 任务成功，发布 /simulator/success=True")
@@ -283,6 +304,32 @@ class SimulatorTask1():
                 rospy.loginfo(f"[sim] 本轮最终得分已写入: {self.score_file}（得分={int(self.score)}）")
             except Exception as e:
                 rospy.logwarn(f"[sim] 写入最终得分失败: {e}")
+            # 额外写出本轮分项 JSON（与 SCORE_FILE 同名但 .json 后缀）
+            try:
+                base, _ = os.path.splitext(self.score_file)
+                detail_json_path = base + ".json"
+                components = {}
+
+                # 你可以按任务规则设定每项分数值；这里与日志对应：
+                if self.comp_intermediate_pos: components["intermediate_pos"] = 30
+                if self.comp_intermediate_ori: components["intermediate_ori"] = 10
+                if self.comp_final_pos:        components["final_pos"] = 30
+                if self.comp_final_ori:        components["final_ori"] = 10
+
+                # 时间得分：如果累计不到，可以按需要从总分反推；这里优先用累计值
+                if self.comp_time_score and self.comp_time_score > 0:
+                    components["time"] = round(float(self.comp_time_score), 6)
+
+                detail_payload = {
+                    "total": int(self.score),
+                    "components": components,
+                }
+                with open(detail_json_path, "w") as jf:
+                    json.dump(detail_payload, jf, ensure_ascii=False, indent=2)
+                rospy.loginfo(f"[sim] 本轮分项明细已写入: {detail_json_path}")
+            except Exception as e:
+                rospy.logwarn(f"[sim] 写入分项明细失败: {e}")
+
         else:
             rospy.loginfo("[sim] 本轮未触发 start，不写入得分文件。")
 

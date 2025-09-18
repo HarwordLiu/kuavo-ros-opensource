@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 import argparse
 from utils.xml_random import randomize_mjcf
+import json
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -174,6 +175,85 @@ def read_score_from_file(score_file: str) -> int:
     except Exception:
         return None
 
+def pre_run_cleanup(scores_dir: str, score_file: str):
+    os.makedirs(scores_dir, exist_ok=True)
+    targets = [
+        os.path.join(scores_dir, "score.json"),
+        score_file,
+        os.path.splitext(score_file)[0] + ".json",
+    ]
+    for p in targets:
+        try:
+            os.remove(p)
+        except FileNotFoundError:
+            pass
+        except Exception:
+            pass
+
+
+
+def write_score_json(path, task_id, scores, comp_sum):
+    import os, json
+
+    # 1) 总分平均（按有效轮次）
+    valid_scores = [s for s in scores if isinstance(s, (int, float))]
+    valid_cycles = len(valid_scores)
+    avg_total = (sum(valid_scores) / valid_cycles) if valid_cycles else 0.0
+
+    # 2) 获取 keys + process_keys
+    keys = set(comp_sum.keys())
+    process_keys, time_key = [], "time"
+    try:
+        catalog_path = os.path.join(os.path.dirname(path), "components_catalog.json")
+        if os.path.exists(catalog_path):
+            with open(catalog_path, "r") as cf:
+                catalog = json.load(cf)
+            expected = catalog.get(str(task_id)) or catalog.get(task_id) or []
+            keys |= set(expected)
+            # 从 catalog 里分离出 time 和 process 部分
+            process_keys = [k for k in expected if k.lower() != "time"]
+            if "time" in expected:
+                time_key = "time"
+    except Exception:
+        pass
+
+    # 3) 原子项平均
+    denom = valid_cycles if valid_cycles else 1
+    components_avg = {}
+    for k in sorted(keys):
+        total_for_k = float(comp_sum.get(k, 0.0))
+        components_avg[k] = total_for_k / denom
+
+    # 4) 聚合 process
+    process_avg = sum(components_avg.get(k, 0.0) for k in process_keys)
+    for k in process_keys:  # 删除原子项
+        components_avg.pop(k, None)
+    components_avg["process"] = process_avg
+
+    payload = {
+        "task_id": task_id,
+        "valid_cycles": valid_cycles,
+        "avg_total_score": avg_total,
+        "components_avg": components_avg
+    }
+    with open(path, "w") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+
+
+
+
+def try_read_detail_json(score_file):
+    try:
+        base, _ = os.path.splitext(score_file)
+        detail_path = base + ".json"
+        if os.path.exists(detail_path):
+            with open(detail_path, "r") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return None
+
+
 def append_history(history_file: str, cycle_idx: int, score: int):
     try:
         os.makedirs(os.path.dirname(history_file), exist_ok=True)
@@ -214,10 +294,16 @@ def run_task(task_id: int, headless: bool):
     # 分数文件与历史文件
     scores_dir = os.path.join(SCRIPT_DIR, "scores")
     score_file = os.path.join(scores_dir, f"score_task{task_id}_last.txt")
-    history_file = os.path.join(scores_dir, f"run_scores_task{task_id}.txt")
 
+    pre_run_cleanup(scores_dir, score_file)
     # 统计所有轮次的分数
     scores = []
+
+    components_sum = {}        # 动态累计不同键的总和
+    score_json_path = os.path.join(scores_dir, "score.json")
+    os.makedirs(scores_dir, exist_ok=True)
+
+
     cfg_map = {
         1: cfg1,
         2: cfg2,
@@ -240,7 +326,7 @@ def run_task(task_id: int, headless: bool):
     # === 无限循环，直到 Ctrl+C 结束 ===
     cycle_idx = 1
     while True:
-        seed = 42 + cycle_idx
+        seed = 242 + cycle_idx
         n_changed = randomize_mjcf(
             in_path=scene_path,
             out_path=scene_path,
@@ -295,12 +381,30 @@ def run_task(task_id: int, headless: bool):
                     f"第 {YELLOW}{cycle_idx}{RESET} 轮：{YELLOW}无成绩（reset 轮）{RESET} | "
                     f"当前平均分: {GREEN}{avg:.2f}{RESET} （有效 {valid_cnt} 轮）"
                 )
-                append_history(history_file, cycle_idx, -1)  # -1 表示无效轮
+
+                detail = try_read_detail_json(score_file)
+                if detail and isinstance(detail.get("components"), dict):
+                    comps = detail["components"]
+                    for k, v in comps.items():
+                        if isinstance(v, (int, float)):
+                            components_sum[k] = components_sum.get(k, 0.0) + float(v)
+
+                write_score_json(score_json_path, task_id, scores, components_sum)
+
             else:
                 scores.append(score)
                 valid_cnt = len(scores)
                 avg = sum(scores) / valid_cnt if valid_cnt > 0 else 0.0
-                append_history(history_file, cycle_idx, score)
+
+                detail = try_read_detail_json(score_file)
+                if detail and isinstance(detail.get("components"), dict):
+                    comps = detail["components"]
+                    for k, v in comps.items():
+                        if isinstance(v, (int, float)):
+                            components_sum[k] = components_sum.get(k, 0.0) + float(v)
+
+                write_score_json(score_json_path, task_id, scores, components_sum)
+
                 print(
                     f"{CYAN}[RESULT]{RESET} "
                     f"第 {YELLOW}{cycle_idx}{RESET} 轮得分: {GREEN}{score}{RESET} | "
@@ -314,6 +418,8 @@ def run_task(task_id: int, headless: bool):
         finally:
             # 关闭仿真环境（roslaunch 进程组）
             try:
+                write_score_json(score_json_path, task_id, scores, components_sum)
+
                 os.killpg(os.getpgid(launch_process.pid), signal.SIGTERM)
             except ProcessLookupError:
                 pass
@@ -323,31 +429,27 @@ def run_task(task_id: int, headless: bool):
         cycle_idx += 1
     os.killpg(os.getpgid(roscore_process.pid), signal.SIGTERM)
 
-def main(headless):
-    task_id = None
-    if len(sys.argv) >= 2:
-        try:
-            task_id = int(sys.argv[1])
-        except ValueError:
-            pass
-
-    while task_id not in [1, 2, 3, 4]:
-        print("========== 模型推理 ==========")
-        print("请选择任务编号（1-4）：")
-        print("1: 任务1 —— 传送带物品分拣")
-        print("2: 任务2 —— 传送带物品称重")
-        print("3: 任务3 —— 物品翻面")
-        print("4: 任务4 —— 货架物品运送")
-        try:
-            task_id = int(input("请输入任务编号 (1-4): ").strip())
-        except Exception:
-            task_id = None
+def main(headless,task_id):
+    if task_id is None:
+        while task_id not in [1, 2, 3, 4]:
+            print("========== 模型推理 ==========")
+            print("请选择任务编号（1-4）：")
+            print("1: 任务1 —— 传送带物品分拣")
+            print("2: 任务2 —— 传送带物品称重")
+            print("3: 任务3 —— 物品翻面")
+            print("4: 任务4 —— 货架物品运送")
+            try:
+                task_id = int(input("请输入任务编号 (1-4): ").strip())
+            except Exception:
+                task_id = None
 
     run_task(task_id,headless)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--headless", default=False, help="是否使用无头模式")
+    parser.add_argument("--task_id", type=int, choices=[1, 2, 3, 4], help="任务编号 (1-4)")
     args = parser.parse_args()
     headless = args.headless
-    main(headless)
+    task_id = args.task_id
+    main(headless,task_id)

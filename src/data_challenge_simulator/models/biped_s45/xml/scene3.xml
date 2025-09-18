@@ -141,8 +141,20 @@
             material="table_legs_metal"
             contype="0" conaffinity="0"/>
     </body>
-  </worldbody>
 
+
+      <body name="belt_plate1" pos="0.6 0 5.8">  
+            <inertial pos="0 0 0" mass="1e-1" diaginertia="1e-6 1e-6 1e-6"/>
+            <joint name="belt_slide" type="slide" axis="0 1 0" range="-20 20" damping="0.001"/>
+            <geom  name="belt_geom1" type="box"
+                  size="0.4 100 0.01"           
+                  material="roofs_mat"
+                  friction="1.0 0.005 0.0001"/>
+      </body>
+  </worldbody>
+  <actuator>
+    <velocity name="belt_speed" joint="belt_slide" kv="1" ctrlrange="-0.1 0.1" />
+  </actuator>
 
 <!-- baselink
       r_leg

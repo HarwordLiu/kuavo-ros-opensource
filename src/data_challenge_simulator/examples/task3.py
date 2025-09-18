@@ -28,6 +28,7 @@ def main():
     robot_state = KuavoRobotState()
 
     # Initialize controllers with high-frequency publishing
+    conveyor_ctrl = ConveyorController()  
     gripper_ctrl = GripperController()  # 100Hz gripper commands
     traj_ctrl = TrajectoryController(robot)  # 100Hz trajectory commands
     obj_pos = ObjectPose()
@@ -97,6 +98,8 @@ def main():
         traj_ctrl.execute_trajectory(q1_list2, sleep_time=0.02)
         time.sleep(0.5)
 
+        conveyor_ctrl.control_speed(-0.1)
+        time.sleep(1.5)
         # ## 抓取第一个物体
         # # 先到达正上方
         curr_q1 = robot_state.arm_joint_state().position
