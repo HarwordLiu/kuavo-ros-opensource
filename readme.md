@@ -22,6 +22,7 @@ docker load -i kuavo_opensource_mpc_wbc_img_v0.6.1.tar.gz
 
 ## 3. 设置机器人版本环境变量
 
+注意，运行推理脚本前请确保机器人版本是45，可用```echo $ROBOT_VERSION```查看当前设置的版本号
 ```bash
 export ROBOT_VERSION=45
 ```
@@ -62,13 +63,14 @@ cd src/kuavo_humanoid_sdk
 roslaunch humanoid_controllers load_kuavo_mujoco_sim.launch
 ```
 
-- 等待机器人加载完成后退出。若能正常运行则说明环境配置成功 
+- 等待机器人加载完成后退出。若能正常运行则说明环境配置成功。若运行时出现闪退情况，可以多试几次。
 
 - 后续可在kuavo_ws目录下进入./zshrc，添加
 ```bash
 export ROBOT_VERSION=45
 source devel/setup.zsh
 ```
+就不需要每次都设置机器人版本和source了
 
 # 内容说明
 ## 如何使用
@@ -76,7 +78,7 @@ source devel/setup.zsh
 
 ⚠️ 此文档只包含推理时仿真侧的操作，推理侧具体请查看kuavo_data_challenge仓库的README文档
 
-进入data_challenge_simulator/examples/deploy文件夹，运行
+进入src/data_challenge_simulator/examples/deploy文件夹，运行
 ```bash
 python3 deploy.py
 ```

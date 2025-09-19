@@ -18,20 +18,6 @@ class ScoringConfig:
     time_full: int = 20                    # 时间满分
     time_threshold_sec: int = 12           # ≤12秒得满分
     time_penalty_per_sec: int = 2          # 超出每秒扣2分，最低0
-
-@dataclass
-class ScoringConfig3:
-    # 区域与方向阈值
-    target_region: Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]
-
-    body_front_axis: str = "-y"
-    front_world_dir: str = "z"
-    tol_deg: float = 10.0
-
-    # # 计分规则
-    time_full: int = 20                    # 时间满分
-    time_threshold_sec: int = 30           # ≤10秒得满分
-    time_penalty_per_sec: int = 2          # 超出每秒扣2分，最低0
 class ScoringEvaluator:
     def __init__(
         self,
@@ -195,6 +181,19 @@ class ScoringEvaluator:
 
         result["total_score"] = self.score
         return result
+@dataclass
+class ScoringConfig3:
+    # 区域与方向阈值
+    target_region: Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]
+
+    body_front_axis: str = "-y"
+    front_world_dir: str = "z"
+    tol_deg: float = 10.0
+
+    # # 计分规则
+    time_full: int = 10                    # 时间满分
+    time_threshold_sec: int = 30           # ≤10秒得满分
+    time_penalty_per_sec: int = 2          # 超出每秒扣2分，最低0
 
 class ScoringEvaluator3:
     def __init__(
@@ -212,17 +211,17 @@ class ScoringEvaluator3:
 
         self.front_obj1_pos_awarded: bool = False
         self.front_obj1_ori_awarded: bool = False
-        self.front_obj1_awarded: bool = False
+        # self.front_obj1_awarded: bool = False
         
         self.back_obj1_pos_awarded: bool = False
         self.back_obj1_ori_awarded: bool = False
-        self.back_obj1_awarded: bool = False
+        # self.back_obj1_awarded: bool = False
 
         self.back_obj2_pos_awarded: bool = False
         self.back_obj2_ori_awarded: bool = False
-        self.back_obj2_awarded: bool = False
+        # self.back_obj2_awarded: bool = False
 
-        # self.start_time: float = time.time()
+        self.start_time: float = time.time()
 
     def reset(self, start_time: Optional[float] = None):
         self.score = 0
@@ -230,17 +229,17 @@ class ScoringEvaluator3:
 
         self.front_obj1_pos_awarded = False
         self.front_obj1_ori_awarded = False
-        self.front_obj1_awarded = False
+        # self.front_obj1_awarded = False
         
         self.back_obj1_pos_awarded = False
         self.back_obj1_ori_awarded = False
-        self.back_obj1_awarded = False
+        # self.back_obj1_awarded = False
 
         self.back_obj2_pos_awarded = False
         self.back_obj2_ori_awarded = False
-        self.back_obj2_awarded = False
+        # self.back_obj2_awarded = False
 
-        # self.start_time = time.time() if start_time is None else start_time
+        self.start_time = time.time() if start_time is None else start_time
 
     def evaluate(
         self,
@@ -251,13 +250,13 @@ class ScoringEvaluator3:
         pos_xyz_back_obj2: Tuple[float, float, float],
         quat_xyzw_back_obj2: Tuple[float, float, float, float],
 
-        # now: Optional[float] = None,
+        now: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         输入：当前位置/朝向，返回一次评估结果。
         只做纯逻辑，不做任何发布/IO。
         """
-        # now = time.time() if now is None else now
+        now = time.time() if now is None else now
         result = {
             # 判定输出
             "in_region_front_obj1": False,
@@ -273,9 +272,9 @@ class ScoringEvaluator3:
             "deg_back_obj2": None,
 
             # 事件标志（用于上层决定ROS行为）
-            "front_obj1_triggered": False,   # 本帧触发了中间点加分
-            "back_obj1_triggered": False,
-            "back_obj2_triggered": False,
+            # "front_obj1_triggered": False,   # 本帧触发了中间点加分
+            # "back_obj1_triggered": False,
+            # "back_obj2_triggered": False,
 
             "success_triggered": False,        # 本帧首次触发终点成功
             "need_publish_success_true": False,
@@ -360,8 +359,8 @@ class ScoringEvaluator3:
                 result["back_obj1_ori_added"] = True
 
             # 当两个子项都拿到时，标记“中间点完成”
-            if self.back_obj1_pos_awarded and self.back_obj1_ori_awarded:
-                self.back_obj1_awarded = True
+            # if self.back_obj1_pos_awarded and self.back_obj1_ori_awarded:
+            #     self.back_obj1_awarded = True
 
         # —— 反面物体加分 —— #
         if in_region_back_obj2:
@@ -381,8 +380,8 @@ class ScoringEvaluator3:
                 result["back_obj2_ori_added"] = True
 
             # 当两个子项都拿到时，标记“中间点完成”
-            if self.back_obj2_pos_awarded and self.back_obj2_ori_awarded:
-                self.back_obj2_awarded = True
+            # if self.back_obj2_pos_awarded and self.back_obj2_ori_awarded:
+            #     self.back_obj2_awarded = True
 
         # —— 正面物体加分 —— #
         if in_region_front_obj1:
@@ -402,29 +401,29 @@ class ScoringEvaluator3:
                 result["front_obj1_ori_added"] = True
 
             # 当两个子项都拿到时，标记“中间点完成”
-            if self.front_obj1_pos_awarded and self.front_obj1_ori_awarded:
-                self.front_obj1_awarded = True
+            # if self.front_obj1_pos_awarded and self.front_obj1_ori_awarded:
+            #     self.front_obj1_awarded = True
 
 
         # —— 终点成功 —— #
-        if self.front_obj1_awarded and self.back_obj1_awarded and self.back_obj2_awarded and (not self.already_reported_success):
+        if self.front_obj1_pos_awarded and (not self.already_reported_success):
             self.already_reported_success = True
             result["success_triggered"] = True
             result["need_publish_success_true"] = True
             result["need_stop_conveyor"] = True
 
-            # # 时间分
-            # elapsed = now - self.start_time
-            # if elapsed <= self.cfg.time_threshold_sec:
-            #     time_score = self.cfg.time_full
-            # else:
-            #     over = elapsed - self.cfg.time_threshold_sec
-            #     time_score = max(0, self.cfg.time_full - over * self.cfg.time_penalty_per_sec)
+            # 时间分
+            elapsed = now - self.start_time
+            if elapsed <= self.cfg.time_threshold_sec:
+                time_score = self.cfg.time_full
+            else:
+                over = elapsed - self.cfg.time_threshold_sec
+                time_score = max(0, self.cfg.time_full - over * self.cfg.time_penalty_per_sec)
 
-            # self.score += time_score
-            # result["score_delta"] += time_score
-            # result["elapsed_sec"] = elapsed
-            # result["time_score_added"] = int(time_score)
+            self.score += time_score
+            result["score_delta"] += time_score
+            result["elapsed_sec"] = elapsed
+            result["time_score_added"] = int(time_score)
         else:
             # 未成功阶段建议持续发 False
             if not self.already_reported_success:

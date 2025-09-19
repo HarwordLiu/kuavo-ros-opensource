@@ -17,6 +17,7 @@ import rospy
 from std_msgs.msg import Bool, Int32
 from std_srvs.srv import Trigger, TriggerRequest, TriggerResponse
 import numpy as np
+import json
 
 class SimulatorTask3():
     def __init__(self,seed):
@@ -24,7 +25,7 @@ class SimulatorTask3():
 
         self.init_service = rospy.ServiceProxy('/simulator/init', Trigger)
         self.pub_success = rospy.Publisher('/simulator/success',Bool, queue_size=10)
-        self.pub_score   = rospy.Publisher('/simulator/score', Int32, queue_size=10, latch=True)
+        # self.pub_score   = rospy.Publisher('/simulator/score', Int32, queue_size=10, latch=True)
         # 等待外部信号
         self.start_service = rospy.Service('/simulator/start', Trigger, self._on_start_service)
         self.reset_service = rospy.Service('/simulator/reset', Trigger, self._on_reset_service)
@@ -53,11 +54,26 @@ class SimulatorTask3():
 
         self.marker1_pos = self.obj_pos.wait_for_position("marker1", timeout=5.0)
 
+        # self.target_region = [
+        # (self.marker1_pos[0]-0.03, self.marker1_pos[0]+0.03),   # x 范围
+        # (self.marker1_pos[1]-0.03, self.marker1_pos[1]+0.03),   # y 范围
+        # (0.85, 1.1)  # z 范围
+        # ]
         self.target_region = [
-        (self.marker1_pos[0]-0.03, self.marker1_pos[0]+0.03),   # x 范围
-        (self.marker1_pos[1]-0.03, self.marker1_pos[1]+0.03),   # y 范围
-        (0.85, 1.1)  # z 范围
+        (0.16, 0.50),
+        (0.21, 0.58),
+        (0.6, 1.00),
         ]
+
+        # 记录分项是否达成
+        self.comp_back_obj1_pos = False
+        self.comp_back_obj1_ori = False
+        self.comp_back_obj2_pos = False
+        self.comp_back_obj2_ori = False
+        self.comp_front_obj1_pos = False
+        self.comp_front_obj1_ori = False
+        self.comp_time_score = 0
+
 
         self.evaluator = ScoringEvaluator3(
             ScoringConfig3(
@@ -65,7 +81,7 @@ class SimulatorTask3():
                 body_front_axis='-y',
                 front_world_dir='z',
                 tol_deg=10.0,
-                time_full=20,
+                time_full=10,
                 time_threshold_sec=30,
                 time_penalty_per_sec=2,
             ),
@@ -207,8 +223,8 @@ class SimulatorTask3():
 
             rate = rospy.Rate(10)  # 10Hz 上报
             self.already_reported_success = False
-            start_time = time.time()  # 循环开始前计时
-            self.evaluator.reset(start_time=start_time)
+            # start_time = time.time()  # 循环开始前计时
+            self.evaluator.reset()
             
             while not rospy.is_shutdown() and not self.reset_evt.is_set():
                 try:
@@ -235,6 +251,17 @@ class SimulatorTask3():
 
                 # 调用通用评估器
                 out = self.evaluator.evaluate(pos_front_obj1,ori_front_obj1, pos_back_obj1, ori_back_obj1, pos_back_obj2, ori_back_obj2, now=time.time())
+
+                if out.get("back_obj1_pos_added"): self.comp_back_obj1_pos = True
+                if out.get("back_obj1_ori_added"): self.comp_back_obj1_ori = True
+                if out.get("back_obj2_pos_added"): self.comp_back_obj2_pos = True
+                if out.get("back_obj2_ori_added"): self.comp_back_obj2_ori = True
+                if out.get("front_obj1_pos_added"): self.comp_front_obj1_pos = True
+                if out.get("front_obj1_pos_added"): self.comp_front_obj1_ori = True
+
+                ts_add = out.get("time_score_added")
+                if isinstance(ts_add, (int, float)):
+                    self.comp_time_score += float(ts_add)
 
                 # 按评估器的“建议标志”做 ROS 行为
                 if out["need_publish_success_true"]:
@@ -300,6 +327,32 @@ class SimulatorTask3():
                 rospy.loginfo(f"[sim] 本轮最终得分已写入: {self.score_file}（得分={int(self.score)}）")
             except Exception as e:
                 rospy.logwarn(f"[sim] 写入最终得分失败: {e}")
+
+            try:
+                base, _ = os.path.splitext(self.score_file)
+                detail_json_path = base + ".json"
+                components = {}
+
+                if self.comp_back_obj1_pos: components["back_obj1_pos"]=10
+                if self.comp_back_obj1_ori: components["back_obj1_ori"]=25
+                if self.comp_back_obj2_pos: components["back_obj2_pos"]=10
+                if self.comp_back_obj2_ori: components["back_obj2_ori"]=25
+                if self.comp_front_obj1_pos: components["front_obj1_pos"]=10
+                if self.comp_front_obj1_ori: components["front_obj1_pos"]=10
+
+                # 时间得分：如果累计不到，可以按需要从总分反推；这里优先用累计值
+                if self.comp_time_score and self.comp_time_score > 0:
+                    components["time"] = round(float(self.comp_time_score), 6)
+
+                detail_payload = {
+                    "total": int(self.score),
+                    "components": components,
+                }
+                with open(detail_json_path, "w") as jf:
+                    json.dump(detail_payload, jf, ensure_ascii=False, indent=2)
+                rospy.loginfo(f"[sim] 本轮分项明细已写入: {detail_json_path}")
+            except Exception as e:
+                rospy.logwarn(f"[sim] 写入分项明细失败: {e}")  
         else:
             rospy.loginfo("[sim] 本轮未触发 start，不写入得分文件。")
 
