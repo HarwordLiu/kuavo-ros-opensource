@@ -6,6 +6,7 @@
 #include <thread>
 #include <mutex>
 #include <iterator>
+#include "ruiwo_actuator_base.h"
 
 /**
  * Structure representing motor parameters for Ruiwo actuators
@@ -90,7 +91,7 @@ struct RuiwoMotorConfig_t {
     }
 };
 
-class RuiWoActuator
+class RuiWoActuator : public RuiwoActuatorBase
 {
  public:
     enum class State {
@@ -119,20 +120,22 @@ public:
      *  1: config error, e.g. config file not exist, parse error...
      *  2: canbus error, e.g. canbus init fail... 
      */
-    int initialize();
-    void enable();
-    void disable();
-    bool disableMotor(int motorIndex);
-    void close();
+    int initialize() override;
+    void enable() override;
+    void disable() override;
+    bool disableMotor(int motorIndex) override;
+    void close() override;
 
     void go_to_zero();
     void set_zero();
-    void saveAsZeroPosition();
-    void saveZeroPosition();
-    void set_teach_pendant_mode(int mode);
-    void changeEncoderZeroRound(int index, double direction);
+    void saveAsZeroPosition() override;
+    void saveZeroPosition() override;
+    void set_teach_pendant_mode(int mode) override;
+    void changeEncoderZeroRound(int index, double direction) override;
+    void adjustZeroPosition(int index, double offset) override;
     void multi_turn_zeroing(const std::vector<int>& dev_ids);
     std::vector<int> get_all_joint_addresses();
+    std::vector<double> getMotorZeroPoints() override;
     
     /**
      * @brief Set the positions object
@@ -142,10 +145,10 @@ public:
      * @param torque     
      * @param velocity  单位为角度/s
      */
-    void set_positions(const std::vector<uint8_t> &index, 
-        const std::vector<double> &positions, 
-        const std::vector<double> &torque, 
-        const std::vector<double> &velocity);
+    void set_positions(const std::vector<uint8_t> &index,
+        const std::vector<double> &positions,
+        const std::vector<double> &torque,
+        const std::vector<double> &velocity) override;
 
     /**
      * @brief Set the torque object
@@ -153,7 +156,7 @@ public:
      * @param index [0,1,2,3,...]
      * @param torque 
      */
-    void set_torque(const std::vector<uint8_t> &index, const std::vector<double> &torque);
+    void set_torque(const std::vector<uint8_t> &index, const std::vector<double> &torque) override;
 
     /**
      * @brief Set the velocity object
@@ -161,16 +164,16 @@ public:
      * @param index [0,1,2,3,...]
      * @param velocity 
      */
-    void set_velocity(const std::vector<uint8_t> &index, const std::vector<double> &velocity);
+    void set_velocity(const std::vector<uint8_t> &index, const std::vector<double> &velocity) override;
     
     /**
      * @brief Get the positions object
      * 
      * @return std::vector<double> radians
      */
-    std::vector<double> get_positions();
-    std::vector<double> get_torque();
-    std::vector<double> get_velocity();
+    std::vector<double> get_positions() override;
+    std::vector<double> get_torque() override;
+    std::vector<double> get_velocity() override;
 
     std::vector<std::vector<float>> get_joint_state();
 
@@ -184,7 +187,7 @@ public:
      * @param kp_pos kp_pos值列表，如果为空则不修改
      * @param kd_pos kd_pos值列表，如果为空则不修改
      */
-    void set_joint_gains(const std::vector<int> &joint_indices, const std::vector<double> &kp_pos, const std::vector<double> &kd_pos);
+    void set_joint_gains(const std::vector<int> &joint_indices, const std::vector<double> &kp_pos, const std::vector<double> &kd_pos) override;
 
     /**
      * @brief 获取指定关节的kp_pos和kd_pos参数
@@ -192,7 +195,7 @@ public:
      * @param joint_indices 关节索引列表，如果为空则返回所有关节
      * @return std::vector<std::vector<double>> 第一个vector是kp_pos，第二个是kd_pos
      */
-    std::vector<std::vector<double>> get_joint_gains(const std::vector<int> &joint_indices = {});    
+    std::vector<std::vector<double>> get_joint_gains(const std::vector<int> &joint_indices = {}) override;    
 
 private:
     void control_thread();

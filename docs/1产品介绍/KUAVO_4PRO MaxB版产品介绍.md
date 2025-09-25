@@ -217,7 +217,7 @@ KUAVO机器人4pro MaxB版包含头、躯干、手臂、腿部，全身总共28�
 
 - 使用环境：室外；
 
-- 支持物体识别、定位和追踪，可构建人体架构图，人体手势识别、肢体手势和动作判断等；
+- 支持物体识别、定位和追踪；
 
 ### 深度摄像头（手腕）：D405
 
@@ -249,7 +249,7 @@ KUAVO机器人4pro MaxB版包含头、躯干、手臂、腿部，全身总共28�
 
 - 使用环境：室内/室外；
 
-- 支持物体识别、定位和追踪，可构建人体架构图，人体手势识别、肢体手势和动作判断等；
+- 支持物体识别、定位和追踪；
 
 ### 激光雷达：mid-360
 
@@ -362,4 +362,4 @@ KUAVO机器人4pro MaxB版包含头、躯干、手臂、腿部，全身总共28�
 
 灵巧手产品说明手册：[app.brainco.cn/universal/stark-serialport-prebuild/docs/BC4-0100114095_20240521.pdf](https://app.brainco.cn/universal/stark-serialport-prebuild/docs/BC4-0100114095_20240521.pdf)
 
-灵巧手官方文档网站：[灵巧手官方文档网站](https://www.brainco-hz.com/docs/revolimb-hand/guide/quick_start.html)
+灵巧手官方文档网站：[灵巧手官方文档网站](https://www.brainco-hz.com/docs/revolimb-hand/revo1/parameters.html)
