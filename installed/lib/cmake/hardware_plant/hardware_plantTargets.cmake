@@ -127,7 +127,7 @@ set_target_properties(hardware_plant::mathtools_hw PROPERTIES
 add_library(hardware_plant::lejuclaw STATIC IMPORTED)
 
 set_target_properties(hardware_plant::lejuclaw PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include/leju_claw_driver;${_IMPORT_PREFIX}/include/leju_claw_driver/3rd_party;${_IMPORT_PREFIX}/include"
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include/leju_claw_driver;${_IMPORT_PREFIX}/include"
   INTERFACE_LINK_DIRECTORIES "${_IMPORT_PREFIX}/lib"
   INTERFACE_LINK_LIBRARIES "yaml-cpp;stdc++fs;usb-1.0;bmapi64;stdc++;pthread"
 )
