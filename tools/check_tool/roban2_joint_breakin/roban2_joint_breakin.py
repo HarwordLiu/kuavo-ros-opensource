@@ -175,10 +175,71 @@ class Roban2UnifiedBreakin:
             self.print_colored(f"手臂磨线运行出错: {e}", Colors.RED)
             return 1
             
+    def check_and_compile_leg_breakin(self):
+        """检查腿部磨线是否需要编译，如果需要则自动编译"""
+        leg_script_dir = self.leg_breakin_script.parent
+        build_dir = leg_script_dir / "build"
+        leg_breakin_so = build_dir / "leg_breakin.so"
+        
+        # 检查build目录和编译产物是否存在
+        if not build_dir.exists() or not leg_breakin_so.exists():
+            self.print_colored("检测到腿部磨线脚本未编译，开始自动编译...", Colors.YELLOW)
+            self.print_colored("这可能需要几分钟时间，请耐心等待...", Colors.CYAN)
+            
+            try:
+                # 创建build目录
+                build_dir.mkdir(exist_ok=True)
+                
+                # 执行cmake配置
+                self.print_colored("步骤1：执行cmake配置...", Colors.BLUE)
+                cmake_result = subprocess.run(
+                    ["cmake", ".."],
+                    cwd=str(build_dir),
+                    capture_output=True,
+                    text=True
+                )
+                
+                if cmake_result.returncode != 0:
+                    self.print_colored(f"cmake配置失败: {cmake_result.stderr}", Colors.RED)
+                    return False
+                
+                # 执行make编译
+                self.print_colored("步骤2：执行make编译...", Colors.BLUE)
+                make_result = subprocess.run(
+                    ["make"],
+                    cwd=str(build_dir),
+                    capture_output=True,
+                    text=True
+                )
+                
+                if make_result.returncode != 0:
+                    self.print_colored(f"make编译失败: {make_result.stderr}", Colors.RED)
+                    return False
+                
+                # 检查编译产物
+                if not leg_breakin_so.exists():
+                    self.print_colored("编译完成但未找到leg_breakin.so文件", Colors.RED)
+                    return False
+                
+                self.print_colored("✓ 腿部磨线脚本编译成功", Colors.GREEN)
+                return True
+                
+            except Exception as e:
+                self.print_colored(f"编译过程中出错: {e}", Colors.RED)
+                return False
+        else:
+            self.print_colored("✓ 腿部磨线脚本已编译，无需重新编译", Colors.GREEN)
+            return True
+
     def run_leg_breakin(self):
         """运行腿部磨线"""
         self.print_colored("启动腿部磨线...", Colors.GREEN)
         self.print_colored("注意：腿部磨线使用EC_Master电机控制", Colors.YELLOW)
+        
+        # 检查并编译腿部磨线脚本
+        if not self.check_and_compile_leg_breakin():
+            self.print_colored("腿部磨线脚本编译失败，无法继续执行", Colors.RED)
+            return 1
         
         # 获取用户输入参数
         print()
@@ -350,6 +411,12 @@ class Roban2UnifiedBreakin:
     def run_leg_breakin_background(self, log_file, duration):
         """在后台运行腿部磨线"""
         try:
+            # 检查并编译腿部磨线脚本
+            if not self.check_and_compile_leg_breakin():
+                with open(log_file, 'w') as f:
+                    f.write("腿部磨线脚本编译失败，无法继续执行\n")
+                return None
+                
             with open(log_file, 'w') as f:
                 # 创建输入管道
                 input_pipe = subprocess.PIPE
