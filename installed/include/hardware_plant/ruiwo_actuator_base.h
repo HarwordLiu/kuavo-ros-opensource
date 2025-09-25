@@ -10,6 +10,20 @@
  **/
 class RuiwoActuatorBase {
 public:
+    enum class State {
+        None,
+        Enabled,
+        Disabled
+    };
+
+    struct MotorStateData {
+        uint8_t id;
+        State   state;
+        MotorStateData():id(0x0), state(State::None) {}
+        MotorStateData(uint8_t id_, State state_):id(id_), state(state_) {}
+    };    
+    using MotorStateDataVec = std::vector<MotorStateData>;   
+public:
     /**
      * @brief 电机执行器基类构造函数
      *
@@ -93,6 +107,13 @@ public:
      * @return std::vector<double> 电机零点位置列表
      */
     virtual std::vector<double> getMotorZeroPoints() = 0;
+
+    /**
+     * @brief 获取所有电机的状态信息
+     *
+     * @return MotorStateDataVec 电机状态数据向量，包含每个电机的ID和状态
+     */
+    virtual MotorStateDataVec get_motor_state() = 0;;
 
     /**
      * @brief 设置多个关节位置

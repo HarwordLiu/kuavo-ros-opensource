@@ -14,20 +14,6 @@ static PyObject *RuiWo_pJoinMethod;// 用于将python线程移动到c++线程中
 
 class RuiWoActuator : public RuiwoActuatorBase
 {
-public:
-    enum class State {
-        None,
-        Enabled,
-        Disabled
-    };
-
-    struct MotorStateData {
-        uint8_t id;
-        State   state;
-        MotorStateData():id(0x0), state(State::None) {}
-        MotorStateData(uint8_t id_, State state_):id(id_), state(state_) {}
-    };    
-    using MotorStateDataVec = std::vector<MotorStateData>;
 private:
     PyObject *pModule;
     PyObject *RuiWoActuatorClass;
@@ -88,7 +74,7 @@ public:
     std::vector<double> get_velocity() override;
     std::vector<std::vector<double>> get_joint_state();
     std::vector<int> disable_joint_ids;
-    MotorStateDataVec get_motor_state();
+    MotorStateDataVec get_motor_state() override;
     bool getMultModeConfig(const YAML::Node &config);
     std::string getHomePath();
 };

@@ -93,21 +93,6 @@ struct RuiwoMotorConfig_t {
 
 class RuiWoActuator : public RuiwoActuatorBase
 {
- public:
-    enum class State {
-        None,
-        Enabled,
-        Disabled
-    };
-
-    struct MotorStateData {
-        uint8_t id;
-        State   state;
-        MotorStateData():id(0x0), state(State::None) {}
-        MotorStateData(uint8_t id_, State state_):id(id_), state(state_) {}
-    };    
-    using MotorStateDataVec = std::vector<MotorStateData>;
-
 public:
     RuiWoActuator(std::string unused = "", bool is_cali = false);
     ~RuiWoActuator();
@@ -126,15 +111,11 @@ public:
     bool disableMotor(int motorIndex) override;
     void close() override;
 
-    void go_to_zero();
-    void set_zero();
     void saveAsZeroPosition() override;
     void saveZeroPosition() override;
     void set_teach_pendant_mode(int mode) override;
     void changeEncoderZeroRound(int index, double direction) override;
     void adjustZeroPosition(int index, double offset) override;
-    void multi_turn_zeroing(const std::vector<int>& dev_ids);
-    std::vector<int> get_all_joint_addresses();
     std::vector<double> getMotorZeroPoints() override;
     
     /**
@@ -176,9 +157,7 @@ public:
     std::vector<double> get_velocity() override;
 
     std::vector<std::vector<float>> get_joint_state();
-
-    MotorStateDataVec get_motor_state();
-    std::vector<std::vector<float>> get_joint_origin_state();
+    MotorStateDataVec get_motor_state() override;
 
     /**
      * @brief 设置指定关节的kp_pos和kd_pos参数
@@ -195,9 +174,15 @@ public:
      * @param joint_indices 关节索引列表，如果为空则返回所有关节
      * @return std::vector<std::vector<double>> 第一个vector是kp_pos，第二个是kd_pos
      */
-    std::vector<std::vector<double>> get_joint_gains(const std::vector<int> &joint_indices = {}) override;    
+    std::vector<std::vector<double>> get_joint_gains(const std::vector<int> &joint_indices = {}) override;
 
 private:
+    void go_to_zero();
+    void set_zero();
+    void multi_turn_zeroing(const std::vector<int>& dev_ids);
+    std::vector<int> get_all_joint_addresses();
+    std::vector<std::vector<float>> get_joint_origin_state();
+
     void control_thread();
     void recv_thread();
     void recv_message();
