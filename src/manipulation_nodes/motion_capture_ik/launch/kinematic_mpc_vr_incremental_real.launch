@@ -8,7 +8,7 @@
   <arg name="sqp_mpc"            default="1"/>
   <arg name="with_mm_ik"         default="false"/>
   <arg name="send_srv"           default="1"/>
-  <arg name="ee_type"            default="qiangnao"/>
+  <arg name="ee_type"            default="lejuclaw"/>
   <arg name="control_torso"      default="0" /> <!-- 0: do NOT control, 1: control torso  -->
   <arg name="incremental_control" default="1" /> <!-- 0: direct control, 1: incremental control -->
   <arg name="ip_address"         default="192.168.3.17" /> <!-- ip address of quest3 -->
