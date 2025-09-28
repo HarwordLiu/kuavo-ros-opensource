@@ -84,7 +84,7 @@ class Quest3Node:
         # Initialize IK solver parameters
         self.set_ik_solver_params()
 
-        self.end_effector_type = "qiangnao"
+        self.end_effector_type = "lejuclaw"
         self.send_srv = True
         self.last_quest_running_state = False
         self.joySticks_data = None
@@ -160,25 +160,39 @@ class Quest3Node:
         self.ik_solve_param.pos_cost_weight = 10.0
 
     def pub_robot_end_hand(self, joyStick_data=None, hand_finger_data=None):
+        print(f"[DEBUG] pub_robot_end_hand called:")
+        print(f"  - ee_type: {self.end_effector_type}")
+        print(f"  - joyStick_data: {'Present' if joyStick_data is not None else 'None'}")
+        print(f"  - hand_finger_data: {'Present' if hand_finger_data is not None else 'None'}")
+
         left_hand_position = [0 for _ in range(6)]
         right_hand_position = [0 for _ in range(6)]
         robot_hand_position = robotHandPosition()
         robot_hand_position.header.stamp = rospy.Time.now()
 
         if self.end_effector_type == "qiangnao":
+            print(f"[DEBUG] Calling handle_qiangnao")
             self.handle_qiangnao(joyStick_data, hand_finger_data, left_hand_position, right_hand_position, robot_hand_position)
         elif self.end_effector_type == "jodell":
+            print(f"[DEBUG] Calling handle_jodell")
             self.handle_jodell(hand_finger_data, left_hand_position, right_hand_position, robot_hand_position)
         elif self.end_effector_type == "lejuclaw":
+            print(f"[DEBUG] Calling handle_lejuclaw")
             self.handle_lejuclaw(hand_finger_data)
+        else:
+            print(f"[DEBUG] Unknown end_effector_type: {self.end_effector_type}")
 
     def pub_leju_claw_command(self, pos:list, vel:list, effort:list) -> None:
+        print(f"[DEBUG] pub_leju_claw_command called")
         msg = lejuClawCommand()
         msg.data.name = ['left_claw', 'right_claw']
         msg.data.position = pos
         msg.data.velocity = vel
         msg.data.effort = effort
-        self.leju_claw_command_pub.publish(pos)
+        print(f"[DEBUG] Message prepared: names={msg.data.name}, pos={msg.data.position}, vel={msg.data.velocity}, effort={msg.data.effort}")
+        print(f"[DEBUG] Publishing to topic: leju_claw_command")
+        self.leju_claw_command_pub.publish(msg)
+        print(f"[DEBUG] Message published successfully")
 
     @staticmethod
     def control_lejuclaw(pos:list, vel:list, effort:list):
@@ -250,14 +264,22 @@ class Quest3Node:
             self.control_robot_hand_position_pub.publish(robot_hand_position)
 
     def handle_lejuclaw(self, hand_finger_data, vel=[90, 90], tor = [1.0, 1.0]):
-        pos = [0.0, 0.0] 
+        print(f"[DEBUG] handle_lejuclaw called")
+        pos = [0.0, 0.0]
         if hand_finger_data is not None:
+            print(f"[DEBUG] hand_finger_data is present, type: {type(hand_finger_data)}, length: {len(hand_finger_data)}")
             left_qpos = hand_finger_data[0]
             right_qpos = hand_finger_data[1]
+            print(f"[DEBUG] left_qpos: {left_qpos}")
+            print(f"[DEBUG] right_qpos: {right_qpos}")
+            print(f"[DEBUG] left_qpos[2]: {left_qpos[2]}, right_qpos[2]: {right_qpos[2]}")
             pos[0] = max(0, min(int(100.0 * left_qpos[2] / 1.70), 100))
             pos[1] = max(0, min(int(100.0 * right_qpos[2] / 1.70), 100))
+            print(f"[DEBUG] Calculated positions: left={pos[0]}, right={pos[1]}")
+            print(f"[DEBUG] Publishing leju_claw_command: pos={pos}, vel={vel}, tor={tor}")
             self.pub_leju_claw_command(pos, vel, tor)
         else:
+            print(f"[DEBUG] hand_finger_data is None, skipping lejuclaw control")
             return
 
     def change_arm_ctrl_mode(self, mode: int):
@@ -663,13 +685,20 @@ class Quest3Node:
             self.last_quest_running_state = self.quest3_arm_info_transformer.is_runing
         
         if self.joySticks_data is None:  # 优先使用手柄数据
+            print(f"[DEBUG] quest_bone_poses_callback: Using hand finger data (no joystick data)")
+            print(f"[DEBUG] left_finger_joints: {left_finger_joints}")
+            print(f"[DEBUG] right_finger_joints: {right_finger_joints}")
             self.pub_robot_end_hand(hand_finger_data=[left_finger_joints, right_finger_joints])
-        
-        # self.joySticks_data = None
+        else:
+            print(f"[DEBUG] quest_bone_poses_callback: Skipping hand finger data (joystick data present)")
+
+        self.joySticks_data = None
 
     def joySticks_data_callback(self, msg):
+        print(f"[DEBUG] joySticks_data_callback: Received joystick data")
         self.quest3_arm_info_transformer.read_joySticks_msg(msg)
         self.joySticks_data = msg
+        print(f"[DEBUG] joySticks_data_callback: Calling pub_robot_end_hand with joystick data")
         self.pub_robot_end_hand(joyStick_data=self.joySticks_data)
 
     def safe_check_enter_incremental_mode(self, left_pose, right_pose):
@@ -735,13 +764,14 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     parser = argparse.ArgumentParser()
     parser.add_argument("--send_srv", type=int, default=1, help="Send arm control service, True or False.")
-    parser.add_argument("--ee_type", "--end_effector_type", dest="end_effector_type", type=str, default="", help="End effector type, jodell, qiangnao or lejuclaw.")
+    parser.add_argument("--ee_type", "--end_effector_type", dest="end_effector_type", type=str, default="lejuclaw", help="End effector type, jodell, qiangnao or lejuclaw.")
     parser.add_argument("--control_torso", type=int, default=0, help="0: do NOT control, 1: control torso.")
     parser.add_argument("--incremental_control", type=int, default=0, help="0: direct control, 1: incremental control.")
     args, unknown = parser.parse_known_args()
     
     quest3_node = Quest3Node()
-    quest3_node.end_effector_type = args.end_effector_type
+    if args.end_effector_type:  # 只有当参数非空时才覆盖
+        quest3_node.end_effector_type = args.end_effector_type
     print(f"end effector type: {quest3_node.end_effector_type}")
     quest3_node.send_srv = args.send_srv
     print(f"Send srv?: {quest3_node.send_srv}")
