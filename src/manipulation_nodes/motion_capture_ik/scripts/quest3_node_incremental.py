@@ -88,6 +88,7 @@ class Quest3Node:
         self.send_srv = True
         self.last_quest_running_state = False
         self.joySticks_data = None
+        self.joySticks_data_for_tracking = None  # 专门用于启动跟踪检测
         self.button_y_last = False
         self.freeze_finger = False
         self.ik_error_norm = [0.0, 0.0]
@@ -524,7 +525,7 @@ class Quest3Node:
                         return True
                 return False
 
-            if is_incremental_control(self.joySticks_data):
+            if is_incremental_control(self.joySticks_data_for_tracking):
                 if self.control_mode != Quest3Node.ControlMode.INCREMENTAL_MODE:
 
                     if self.enable_safety and not self.safe_check_enter_incremental_mode(left_pose, right_pose):
@@ -689,13 +690,16 @@ class Quest3Node:
         else:
             print(f"[DEBUG] quest_bone_poses_callback: Skipping hand finger data (joystick data present)")
 
+        # 清空手柄数据以确保夹爪控制能使用手指数据
+        # 注意：joySticks_data_for_tracking 保持不变，用于启动跟踪检测
         self.joySticks_data = None
 
     def joySticks_data_callback(self, msg):
-        
+
         self.quest3_arm_info_transformer.read_joySticks_msg(msg)
         self.joySticks_data = msg
-        
+        self.joySticks_data_for_tracking = msg  # 同时更新跟踪用的数据
+
         self.pub_robot_end_hand(joyStick_data=self.joySticks_data)
 
     def safe_check_enter_incremental_mode(self, left_pose, right_pose):
