@@ -1,4 +1,4 @@
-from utils.xml_random import randomize_mjcf
+# 标准库导入
 import json
 import argparse
 from pathlib import Path
@@ -9,13 +9,16 @@ import time
 import os
 import sys
 
-# 首先设置 Python 路径，这样才能找到 utils 模块
+# === 重要：先设置 Python 路径，再导入本地模块 ===
+# 必须在导入 utils 之前设置路径，否则 Python 找不到 utils 模块
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-# 现在可以导入 utils 模块了
+# 本地模块导入（必须在路径设置之后）
+# 注意：不要移动下面这行到文件开头，否则会导致 ModuleNotFoundError
+from utils.xml_random import randomize_mjcf  # noqa: E402
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
