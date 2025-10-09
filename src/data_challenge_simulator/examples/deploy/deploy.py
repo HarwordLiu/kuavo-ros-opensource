@@ -1,25 +1,25 @@
+import json
+from utils.xml_random import randomize_mjcf
+import argparse
+from pathlib import Path
+from datetime import datetime
+import subprocess
+import signal
+import time
 import os
 import sys
-HERE = os.path.dirname(os.path.abspath(__file__))               
-ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))           
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-import time
-import signal
-import subprocess
-from datetime import datetime
-from pathlib import Path
-import argparse
-from utils.xml_random import randomize_mjcf
-import json
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 GREEN = "\033[92m"
-CYAN  = "\033[96m"
-YELLOW= "\033[93m"
+CYAN = "\033[96m"
+YELLOW = "\033[93m"
 RESET = "\033[0m"
 
 cfg1 = {
@@ -84,9 +84,9 @@ cfg1 = {
             "attributes": {
                 "diffuse": {"uniform": [0.2, 0.6], "ndim": 3},
                 "ambient": {"per_dim": [
-                {"uniform": [0.0, 0.3]},
-                {"uniform": [0.0, 0.3]},
-                {"uniform": [0.0, 0.3]}
+                    {"uniform": [0.0, 0.3]},
+                    {"uniform": [0.0, 0.3]},
+                    {"uniform": [0.0, 0.3]}
                 ]},
                 "specular": {"uniform": [0.0, 0.2], "ndim": 3}
             }
@@ -156,9 +156,9 @@ cfg2 = {
             "attributes": {
                 "diffuse": {"uniform": [0.2, 0.6], "ndim": 3},
                 "ambient": {"per_dim": [
-                {"uniform": [0.0, 0.3]},
-                {"uniform": [0.0, 0.3]},
-                {"uniform": [0.0, 0.3]}
+                    {"uniform": [0.0, 0.3]},
+                    {"uniform": [0.0, 0.3]},
+                    {"uniform": [0.0, 0.3]}
                 ]},
                 "specular": {"uniform": [0.0, 0.2], "ndim": 3}
             }
@@ -174,6 +174,7 @@ def read_score_from_file(score_file: str) -> int:
             return int(line)
     except Exception:
         return None
+
 
 def pre_run_cleanup(scores_dir: str, score_file: str):
     os.makedirs(scores_dir, exist_ok=True)
@@ -191,9 +192,9 @@ def pre_run_cleanup(scores_dir: str, score_file: str):
             pass
 
 
-
 def write_score_json(path, task_id, scores, comp_sum):
-    import os, json
+    import os
+    import json
 
     # 1) 总分平均（按有效轮次）
     valid_scores = [s for s in scores if isinstance(s, (int, float))]
@@ -204,7 +205,8 @@ def write_score_json(path, task_id, scores, comp_sum):
     keys = set(comp_sum.keys())
     process_keys, time_key = [], "time"
     try:
-        catalog_path = os.path.join(os.path.dirname(path), "components_catalog.json")
+        catalog_path = os.path.join(
+            os.path.dirname(path), "components_catalog.json")
         if os.path.exists(catalog_path):
             with open(catalog_path, "r") as cf:
                 catalog = json.load(cf)
@@ -240,8 +242,6 @@ def write_score_json(path, task_id, scores, comp_sum):
         json.dump(payload, f, indent=2, ensure_ascii=False)
 
 
-
-
 def try_read_detail_json(score_file):
     try:
         base, _ = os.path.splitext(score_file)
@@ -264,6 +264,8 @@ def append_history(history_file: str, cycle_idx: int, score: int):
         pass
 
     # === 无限循环，直到 Ctrl+C 结束 ===
+
+
 def run_task(task_id: int, headless: bool):
 
     print("[INFO] 启动 roscore...")
@@ -275,7 +277,7 @@ def run_task(task_id: int, headless: bool):
     )
     time.sleep(1)
 
-        # 配置虚拟屏幕参数
+    # 配置虚拟屏幕参数
     if headless:
         # # 设置 DISPLAY 环境变量
         task_env = os.environ.copy()
@@ -302,7 +304,6 @@ def run_task(task_id: int, headless: bool):
     components_sum = {}        # 动态累计不同键的总和
     score_json_path = os.path.join(scores_dir, "score.json")
     os.makedirs(scores_dir, exist_ok=True)
-
 
     cfg_map = {
         1: cfg1,
@@ -331,7 +332,7 @@ def run_task(task_id: int, headless: bool):
             in_path=scene_path,
             out_path=scene_path,
             config=cfg,
-            seed = seed
+            seed=seed
         )
 
         print(f"\n[INFO] === 第 {cycle_idx} 轮：启动仿真环境：{launch_file} ===")
@@ -345,7 +346,7 @@ def run_task(task_id: int, headless: bool):
 
         try:
             # 等仿真起来
-            time.sleep(2)
+            time.sleep(10)
 
             print(f"[INFO] 运行任务脚本：{task_script}")
             env = os.environ.copy()
@@ -354,7 +355,8 @@ def run_task(task_id: int, headless: bool):
 
             EXAMPLES_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
             PKG_ROOT = os.path.dirname(EXAMPLES_DIR)
-            env['PYTHONPATH'] = PKG_ROOT + os.pathsep + env.get('PYTHONPATH', '')
+            env['PYTHONPATH'] = PKG_ROOT + \
+                os.pathsep + env.get('PYTHONPATH', '')
 
             # 先清空旧分数文件，避免误读上轮
             try:
@@ -362,8 +364,8 @@ def run_task(task_id: int, headless: bool):
                     os.remove(score_file)
             except Exception:
                 pass
-            
-            cmd = ['python3', task_script,'--seed', str(seed),]
+
+            cmd = ['python3', task_script, '--seed', str(seed),]
             task_process = subprocess.Popen(cmd, env=env)
 
             # 等到任务脚本退出（收到 /simulator/reset 后会自行退出）
@@ -387,9 +389,11 @@ def run_task(task_id: int, headless: bool):
                     comps = detail["components"]
                     for k, v in comps.items():
                         if isinstance(v, (int, float)):
-                            components_sum[k] = components_sum.get(k, 0.0) + float(v)
+                            components_sum[k] = components_sum.get(
+                                k, 0.0) + float(v)
 
-                write_score_json(score_json_path, task_id, scores, components_sum)
+                write_score_json(score_json_path, task_id,
+                                 scores, components_sum)
 
             else:
                 scores.append(score)
@@ -401,9 +405,11 @@ def run_task(task_id: int, headless: bool):
                     comps = detail["components"]
                     for k, v in comps.items():
                         if isinstance(v, (int, float)):
-                            components_sum[k] = components_sum.get(k, 0.0) + float(v)
+                            components_sum[k] = components_sum.get(
+                                k, 0.0) + float(v)
 
-                write_score_json(score_json_path, task_id, scores, components_sum)
+                write_score_json(score_json_path, task_id,
+                                 scores, components_sum)
 
                 print(
                     f"{CYAN}[RESULT]{RESET} "
@@ -418,7 +424,8 @@ def run_task(task_id: int, headless: bool):
         finally:
             # 关闭仿真环境（roslaunch 进程组）
             try:
-                write_score_json(score_json_path, task_id, scores, components_sum)
+                write_score_json(score_json_path, task_id,
+                                 scores, components_sum)
 
                 os.killpg(os.getpgid(launch_process.pid), signal.SIGTERM)
             except ProcessLookupError:
@@ -429,7 +436,8 @@ def run_task(task_id: int, headless: bool):
         cycle_idx += 1
     os.killpg(os.getpgid(roscore_process.pid), signal.SIGTERM)
 
-def main(headless,task_id):
+
+def main(headless, task_id):
     if task_id is None:
         while task_id not in [1, 2, 3, 4]:
             print("========== 模型推理 ==========")
@@ -443,13 +451,15 @@ def main(headless,task_id):
             except Exception:
                 task_id = None
 
-    run_task(task_id,headless)
+    run_task(task_id, headless)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--headless", default=False, help="是否使用无头模式")
-    parser.add_argument("--task_id", type=int, choices=[1, 2, 3, 4], help="任务编号 (1-4)")
+    parser.add_argument("--task_id", type=int,
+                        choices=[1, 2, 3, 4], help="任务编号 (1-4)")
     args = parser.parse_args()
     headless = args.headless
     task_id = args.task_id
-    main(headless,task_id)
+    main(headless, task_id)
