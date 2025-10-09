@@ -1,3 +1,4 @@
+from utils.xml_random import randomize_mjcf
 import json
 import argparse
 from pathlib import Path
@@ -15,7 +16,6 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 # 现在可以导入 utils 模块了
-from utils.xml_random import randomize_mjcf
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -279,7 +279,7 @@ def run_task(task_id: int, headless: bool):
         stderr=subprocess.DEVNULL,
         preexec_fn=os.setsid
     )
-    time.sleep(1)
+    time.sleep(10)
 
     # 配置虚拟屏幕参数
     if headless:
