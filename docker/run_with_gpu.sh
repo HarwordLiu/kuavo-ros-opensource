@@ -112,10 +112,12 @@ if [[ $(docker ps -aq -f ancestor=${IMAGE_NAME} -f name=${CONTAINER_NAME}) ]]; t
     docker exec -it $CONTAINER_NAME zsh
 else
     echo "Creating a new container '${CONTAINER_NAME}' based on image '${IMAGE_NAME}' ..."
-	docker run -it --net host --gpus all \
+	docker run -it --gpus all \
 		--runtime nvidia \
         --name $CONTAINER_NAME \
 		--privileged \
+        -p 11311:11311 \
+        -p 33691-33891:33691-33891 \
 		-v /dev:/dev \
 		-v "${HOME}/.ros:/root/.ros" \
 		-v "$CCACHE_DIR:/root/.ccache" \
