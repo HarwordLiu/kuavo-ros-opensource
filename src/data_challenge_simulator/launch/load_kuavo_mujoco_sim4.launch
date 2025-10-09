@@ -25,7 +25,7 @@
     <arg name="use_joint_filter"   default="false"/>
     <arg name="estimator_type"     default="1"/>
     <arg name="wbc_only"           default="false"/>
-    <arg name="play_back"          default="false"/>  
+    <arg name="play_back"          default="false"/>
     <arg name="joystick_type"      default="sim"/>
     <arg name="arm_move_spd"      default="1.2"/>
     <arg name="start_way"          default="manual"/>
@@ -70,7 +70,7 @@
 
     <!-- Launch script to collect kuavo-launch information -->
     <node pkg="humanoid_controllers" type="collect_launch_info.sh" name="collect_launch_info" />
-    
+
     <param name="teach_pendant"  value="$(arg teach_pendant)"/>
     <!-- MPC调度相关参数 -->
     <param name="/mpc/schedule/enable" value="false"/>
@@ -103,14 +103,14 @@
 
 
     <!-- nodelet manager -->
-    <node pkg="nodelet" type="nodelet" name="nodelet_manager" args="manager" respawn="false" 
+    <node pkg="nodelet" type="nodelet" name="nodelet_manager" args="manager" respawn="false"
        output="screen" required="true" clear_params="true"
        launch-prefix="$(find humanoid_controllers)/scripts/start_node.sh $(arg with_coredump)">
         <param name="num_worker_threads" type="int" value="10" />
     </node>
     <node pkg="nodelet" type="nodelet" name="nodelet_controller" args="load HumanoidControllerNodelet nodelet_manager" respawn="false" output="screen" required="true">
       </node>
-    <node pkg="nodelet" type="nodelet" name="ekf_se" args="load RobotLocalization/EkfNodelet nodelet_manager" respawn="false" output="screen" required="true" launch-prefix="taskset -c 18">
+    <node pkg="nodelet" type="nodelet" name="ekf_se" args="load RobotLocalization/EkfNodelet nodelet_manager" respawn="false" output="screen" required="true" launch-prefix="taskset -c 1">
       <rosparam command="load" file="$(find humanoid_estimation)/params/ekf_template.yaml" />
     </node>
     <group unless="$(arg play_back)">
@@ -133,7 +133,7 @@
           <arg name="joystick_type" value="$(arg joystick_type)"/>
         </include>
       </group>
-    </group>    
+    </group>
 
     <!--publish system state  -->
     <group if="$(arg output_system_info)">
@@ -145,7 +145,7 @@
     <group if="$(arg vr_remote_control)">
       <include file="$(find noitom_hi5_hand_udp_python)/launch/launch_quest3_ik.launch"/>
     </group>
-    
+
     <group if="$(arg with_ik)">
         <include file="$(find motion_capture_ik)/launch/ik_node.launch"/>
     </group>

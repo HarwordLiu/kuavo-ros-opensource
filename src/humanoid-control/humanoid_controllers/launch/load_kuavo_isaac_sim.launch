@@ -25,7 +25,7 @@
     <arg name="use_joint_filter"   default="false"/>
     <arg name="estimator_type"     default="1"/>
     <arg name="wbc_only"           default="false"/>
-    <arg name="play_back"          default="false"/>  
+    <arg name="play_back"          default="false"/>
     <arg name="joystick_type"      default="sim"/>
     <arg name="arm_move_spd"      default="3.0"/>
     <arg name="start_way"          default="manual"/>
@@ -39,7 +39,7 @@
     <arg name="with_coredump" value="" unless="$(arg coredump)"/>
     <arg name="with_ik" default="true"/>
     <arg name="with_mm_ik" default="true"/>
-    
+
     <!-- multiplot -->
     <group if="$(arg multiplot)">
       <include file="$(find humanoid_interface_ros)/launch/multiplot.launch"/>
@@ -65,7 +65,7 @@
 
     <!-- Launch script to collect kuavo-launch information -->
     <node pkg="humanoid_controllers" type="collect_launch_info.sh" name="collect_launch_info" />
-    
+
     <!-- mpc node -->
     <group if="$(arg use_external_mpc)">
       <node pkg="humanoid_interface_ros" type="humanoid_sqp_mpc" name="humanoid_sqp_mpc" output="screen" required="true" launch-prefix="$(find humanoid_controllers)/scripts/start_node.sh $(arg with_coredump)"/>
@@ -85,14 +85,14 @@
 
 
     <!-- nodelet manager -->
-    <node pkg="nodelet" type="nodelet" name="nodelet_manager" args="manager" respawn="false" 
+    <node pkg="nodelet" type="nodelet" name="nodelet_manager" args="manager" respawn="false"
        output="screen" required="true" clear_params="true"
        launch-prefix="$(find humanoid_controllers)/scripts/start_node.sh $(arg with_coredump)">
         <param name="num_worker_threads" type="int" value="10" />
     </node>
     <node pkg="nodelet" type="nodelet" name="nodelet_controller" args="load HumanoidControllerNodelet nodelet_manager" respawn="false" output="screen" required="true">
       </node>
-   <node pkg="nodelet" type="nodelet" name="ekf_se" args="load RobotLocalization/EkfNodelet nodelet_manager" respawn="false" output="screen" required="true" launch-prefix="taskset -c 18">
+   <node pkg="nodelet" type="nodelet" name="ekf_se" args="load RobotLocalization/EkfNodelet nodelet_manager" respawn="false" output="screen" required="true" launch-prefix="taskset -c 1">
       <rosparam command="load" file="$(find humanoid_estimation)/params/ekf_template.yaml" />
     </node>
     <!-- <group unless="$(arg play_back)">
@@ -115,7 +115,7 @@
           <arg name="joystick_type" value="$(arg joystick_type)"/>
         </include>
       </group>
-    </group>    
+    </group>
 
     <!--publish system state  -->
     <group if="$(arg output_system_info)">
