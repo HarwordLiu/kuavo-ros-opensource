@@ -65,8 +65,8 @@ class SimulatorTask1():
         self.marker2_pos = self.obj_pos.wait_for_position("marker2", timeout=5.0)
 
         self.intermediate_region = [
-        (self.marker1_pos[0]-0.03, self.marker1_pos[0]+0.03),   # x 范围
-        (self.marker1_pos[1]-0.03, self.marker1_pos[1]+0.03),   # y 范围
+        (self.marker1_pos[0]-0.035, self.marker1_pos[0]+0.035),   # x 范围
+        (self.marker1_pos[1]-0.035, self.marker1_pos[1]+0.035),   # y 范围
         (0.9, 0.965)  # z 范围
         ]
 

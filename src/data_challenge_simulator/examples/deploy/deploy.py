@@ -30,8 +30,8 @@ cfg1 = {
             "attributes": {
                 "pos": {  # 基于 (0.52, -0.50, 0.8721)
                     "per_dim": [
-                        {"uniform": [0.42, 0.52]},    # x
-                        {"uniform": [-0.05, -0.05]},  # y
+                        {"uniform": [0.35, 0.52]},    # x
+                        {"uniform": [-0.05, -0.08]},  # y
                         {"set": 0.8721}               # z 固定（也可用小范围 uniform）
                     ]
                 }
@@ -50,8 +50,8 @@ cfg1 = {
             "attributes": {
                 "pos": {  # 基于 (0.42, -0.03, 0.8721)
                     "per_dim": [
-                        {"uniform": [0.39, 0.54]},    # x
-                        {"uniform": [-0.56, -0.42]},   # y
+                        {"uniform": [0.35, 0.54]},    # x
+                        {"uniform": [-0.56, -0.36]},   # y
                         {"set": 0.8721}               # z 固定
                     ]
                 }
@@ -102,8 +102,8 @@ cfg2 = {
             "attributes": {
                 "pos": {  # 基于 (0.52, -0.50, 0.8721)
                     "per_dim": [
-                        {"uniform": [0.35, 0.45]},    # x
-                        {"uniform": [0.05, 0.15]},  # y
+                        {"uniform": [0.35, 0.50]},    # x
+                        {"uniform": [0.05, 0.20]},  # y
                         {"set": 0.89}               # z 固定
                     ]
                 }
@@ -123,7 +123,7 @@ cfg2 = {
                 "pos": {  # 基于 (0.42, -0.03, 0.8721)
                     "per_dim": [
                         {"uniform": [0.3, 0.50]},    # x
-                        {"uniform": [0.5, 0.65]},   # y
+                        {"uniform": [0.45, 0.68]},   # y
                         {"set": 0.871}               # z 固定
                     ]
                 }
@@ -166,6 +166,37 @@ cfg2 = {
     ]
 }
 
+cfg3 = {
+    "rules": [
+        {
+            "select": ".//body[@name='table']/geom[@name='table_top']",
+            "attributes": {
+                "rgba": {"color": {"alpha": [1.0, 1.0]}}
+            }
+        },
+
+        {
+            "select": ".//body[@name='marker1']/geom",
+            "attributes": {
+                "rgba": {"color": {"alpha": [1.0, 1.0]}}
+            }
+        },
+
+        # ---- 光照与视角 ----
+        {
+            "select": ".//visual/headlight",
+            "attributes": {
+                "diffuse": {"uniform": [0.1, 0.8], "ndim": 3},
+                "ambient": {"per_dim": [
+                {"uniform": [0.0, 0.5]},
+                {"uniform": [0.0, 0.5]},
+                {"uniform": [0.0, 0.5]}
+                ]},
+                "specular": {"uniform": [0.0, 0.4], "ndim": 3}
+            }
+        }
+    ]
+}
 
 def read_score_from_file(score_file: str) -> int:
     try:
@@ -304,12 +335,7 @@ def run_task(task_id: int, headless: bool):
     os.makedirs(scores_dir, exist_ok=True)
 
 
-    cfg_map = {
-        1: cfg1,
-        2: cfg2,
-        # 3: cfg3,
-        # 4: cfg4,
-    }
+
 
     scene_map = {
         1: "scene1.xml",
@@ -318,7 +344,6 @@ def run_task(task_id: int, headless: bool):
         4: "scene4.xml",
     }
 
-    cfg = cfg_map[task_id]
     scene_file = scene_map[task_id]
 
     scene_path = f"/root/kuavo_ws/src/data_challenge_simulator/models/biped_s45/xml/{scene_file}"
@@ -326,13 +351,25 @@ def run_task(task_id: int, headless: bool):
     # === 无限循环，直到 Ctrl+C 结束 ===
     cycle_idx = 1
     while True:
-        seed = 242 + cycle_idx
-        n_changed = randomize_mjcf(
-            in_path=scene_path,
-            out_path=scene_path,
-            config=cfg,
-            seed = seed
-        )
+        seed = 41 + cycle_idx
+
+        if task_id==1 or task_id==2 or task_id==3:
+
+            cfg_map = {
+            1: cfg1,
+            2: cfg2,
+            3: cfg3,
+            # 4: cfg4,
+            }
+
+            cfg = cfg_map[task_id]
+
+            n_changed = randomize_mjcf(
+                in_path=scene_path,
+                out_path=scene_path,
+                config=cfg,
+                seed = seed
+            )
 
         print(f"\n[INFO] === 第 {cycle_idx} 轮：启动仿真环境：{launch_file} ===")
         launch_process = subprocess.Popen(

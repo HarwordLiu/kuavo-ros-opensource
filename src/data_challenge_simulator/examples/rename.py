@@ -4,9 +4,9 @@ import uuid
 import time
 
 # ============ CONFIG ===========
-DIR         = "/home/ruichen/Downloads/kuavo-ros-control/src/data_challenge_simulator/examples/bags/run_2025-09-18_17-20-54"   # 目标目录
-PREFIX      = "0918_task3"           # 前缀
-START       = 143                # 起始序号）
+DIR         = "/home/ruichen/Downloads/kuavo-ros-control/src/data_challenge_simulator/examples/bags/run_2025-10-06_16-35-32"   # 目标目录
+PREFIX      = "task3"           # 前缀
+START       = 1509                # 起始序号）
 WIDTH       = None              # 序号宽度；None=自动
 EXT         = ".bag"            # 扩展名
 SORT_MODE   = "mtime"           # 排序： "mtime" | "ctime" | "name"

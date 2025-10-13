@@ -14,7 +14,7 @@ from utils.object_randomizer import ObjectRandomizer
 from utils.utils import Utils
 import math, random
 from typing import Tuple
-from scipy.spatial.transform import Rotation as R
+# from scipy.spatial.transform import Rotation as R
 from utils.xml_random import randomize_mjcf
 
 def main():

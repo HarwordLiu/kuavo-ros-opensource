@@ -54,16 +54,16 @@ class SimulatorTask3():
 
         self.marker1_pos = self.obj_pos.wait_for_position("marker1", timeout=5.0)
 
-        # self.target_region = [
-        # (self.marker1_pos[0]-0.03, self.marker1_pos[0]+0.03),   # x 范围
-        # (self.marker1_pos[1]-0.03, self.marker1_pos[1]+0.03),   # y 范围
-        # (0.85, 1.1)  # z 范围
-        # ]
         self.target_region = [
-        (0.16, 0.50),
-        (0.21, 0.58),
-        (0.6, 1.00),
+        (self.marker1_pos[0]-0.18, self.marker1_pos[0]+0.18),   # x 范围
+        (self.marker1_pos[1]-0.18, self.marker1_pos[1]+0.18),   # y 范围
+        (0.685, 0.693)  # z 范围
         ]
+        # self.target_region = [
+        # (0.16, 0.50),
+        # (0.21, 0.58),
+        # (0.6, 1.00),
+        # ]
 
         # 记录分项是否达成
         self.comp_back_obj1_pos = False
@@ -80,10 +80,10 @@ class SimulatorTask3():
                 target_region=self.target_region,
                 body_front_axis='-y',
                 front_world_dir='z',
-                tol_deg=10.0,
+                tol_deg=5.0,
                 time_full=10,
                 time_threshold_sec=30,
-                time_penalty_per_sec=2,
+                time_penalty_per_sec=1,
             ),
             is_in_region_fn=lambda pos, region: Utils.is_in_target_region(pos, region),
             is_front_facing_fn=lambda quat_xyzw, body_front_axis, front_world_dir, tol_deg:
@@ -103,6 +103,8 @@ class SimulatorTask3():
     def _on_reset_service(self, req):
         """等待外部代码发送 reset 信号"""
         rospy.loginfo("[sim] 收到外部 reset 信号，准备重置任务")
+        self.reset_evt.set()
+        return TriggerResponse(success=True, message="Task reset triggered")
 
     def _sample_position_with_seed(self,seed: int, region: dict):
         """
@@ -145,6 +147,8 @@ class SimulatorTask3():
                 },
                 "orientation": {"x": qx, "y": qy, "z": qz, "w": qw}
             })
+            seed+=1000
+
 
         # 应用到仿真
         self.obj_pos_set.randomize_multiple_objects(object_configs)
@@ -169,9 +173,9 @@ class SimulatorTask3():
             self.robot_state = KuavoRobotState()
 
             REGIONS = {
-                "shampoo1": {"x": (0.23, 0.28), "y": (-0.17, -0.15), "z": (0.69, 0.69)},  # 区域 A
-                "shampoo2": {"x": (0.23, 0.28), "y": (-0.30, -0.27), "z": (0.69, 0.69)},  # 区域 B
-                "shampoo3": {"x": (0.23, 0.28), "y": (-0.42, -0.40), "z": (0.69, 0.69)},  # 区域 C
+                "shampoo1": {"x": (0.18, 0.33), "y": (-0.18, -0.13), "z": (0.69, 0.69)},  # 区域 A
+                "shampoo2": {"x": (0.18, 0.33), "y": (-0.35, -0.25), "z": (0.69, 0.69)},  # 区域 B
+                "shampoo3": {"x": (0.18, 0.33), "y": (-0.45, -0.40), "z": (0.69, 0.69)},  # 区域 C
             }
 
             FRONT = [0.5, -0.5, 0.5, -0.5]  # (w, x, y, z)
@@ -271,28 +275,28 @@ class SimulatorTask3():
                 elif out["need_publish_success_false"]:
                     self.pub_success.publish(Bool(data=False))
 
-                if out["back_obj1_triggered"]:
+                if out["back_obj1_pos_added"] or out["back_obj1_ori_added"]:
                     parts = []
                     if out["back_obj1_pos_added"]: parts.append("+10(位置)")
-                    if out["back_obj1_ori_added"]: parts.append("+20(方向)")
-                    rospy.loginfo(f"[sim] 🟡 反面物体放置成功：{' '.join(parts)}，总分 {out['total_score']}")
+                    if out["back_obj1_ori_added"]: parts.append("+25(方向)")
+                    rospy.loginfo(f"[sim] 🟡 反面物体1放置成功：{' '.join(parts)}，总分 {out['total_score']}")
 
-                if out["back_obj2_triggered"]:
+                if out["back_obj2_pos_added"] or out["back_obj2_ori_added"]:
                     parts = []
                     if out["back_obj2_pos_added"]: parts.append("+10(位置)")
-                    if out["back_obj2_ori_added"]: parts.append("+20(方向)")
-                    rospy.loginfo(f"[sim] 🟡 反面物体放置成功：{' '.join(parts)}，总分 {out['total_score']}")
+                    if out["back_obj2_ori_added"]: parts.append("+25(方向)")
+                    rospy.loginfo(f"[sim] 🟡 反面物体2放置成功：{' '.join(parts)}，总分 {out['total_score']}")
 
-                if out["front_obj1_triggered"]:
+                if out["front_obj1_pos_added"] or out["front_obj1_ori_added"]:
                     parts = []
                     if out["front_obj1_pos_added"]: parts.append("+10(位置)")
-                    if out["front_obj1_ori_added"]: parts.append("+20(方向)")
+                    if out["front_obj1_ori_added"]: parts.append("+10(方向)")
                     rospy.loginfo(f"[sim] 🟡 正面物体放置成功：{' '.join(parts)}，总分 {out['total_score']}")
 
                 if out["success_triggered"]:
                     parts = []
                     parts.append(f"+{out['time_score_added']}(时间)")
-                    rospy.loginfo(f"[sim] ✅ 全部成功：{' '.join(parts)}，用时 {out['elapsed_sec']:.2f}s，总分 {out['total_score']}")
+                    rospy.loginfo(f"[sim] ✅ 任务完成：{' '.join(parts)}，用时 {out['elapsed_sec']:.2f}s，总分 {out['total_score']}")
 
                 # 持续发布当前分数
                 self.score = out["total_score"]

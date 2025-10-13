@@ -89,7 +89,11 @@
           material="roofs_mat"/>
 
 
-
+    <body name="marker1" pos="0.32 0.4 0.671">
+      <geom name="marker1" type="box" size="0.18 0.18 0.001"
+            rgba="1 0 1 1"
+            contype="0" conaffinity="0"/>
+    </body>
 
     <body name="table" pos="0.5 0 0.65">
       <!-- ── 桌面 ── -->
@@ -100,12 +104,12 @@
             friction="1 0.005 0.0001"/>
 
       <!-- marker -->
-      <geom name="marker2_1" type="box" size="0.01 0.18 0.001"
+      <!-- <geom name="marker1" type="box" size="0.18 0.18 0.001"
             rgba="1 0 1 1"
-            pos="0 0.4 0.021"
-            contype="0" conaffinity="0"/>
+            pos="-0.18 0.4 0.021"
+            contype="0" conaffinity="0"/> -->
 
-      <geom name="marker2_2" type="box" size="0.18 0.01 0.001"
+      <!-- <geom name="marker2_2" type="box" size="0.18 0.01 0.001"
             rgba="1 0 1 1"
             pos="-0.17 0.58 0.021"
             contype="0" conaffinity="0"/>
@@ -118,7 +122,7 @@
       <geom name="marker2_4" type="box" size="0.18 0.01 0.001"
             rgba="1 0 1 1"
             pos="-0.17 0.21 0.021"
-            contype="0" conaffinity="0"/>
+            contype="0" conaffinity="0"/> -->
       <!-- ── 桌腿 ── -->
       <geom name="leg_fl" type="cylinder"
             size="0.03 0.4"               
@@ -141,8 +145,20 @@
             material="table_legs_metal"
             contype="0" conaffinity="0"/>
     </body>
-  </worldbody>
 
+
+      <body name="belt_plate1" pos="0.6 0 5.8">  
+            <inertial pos="0 0 0" mass="1e-1" diaginertia="1e-6 1e-6 1e-6"/>
+            <joint name="belt_slide" type="slide" axis="0 1 0" range="-20 20" damping="0.001"/>
+            <geom  name="belt_geom1" type="box"
+                  size="0.4 100 0.01"           
+                  material="roofs_mat"
+                  friction="1.0 0.005 0.0001"/>
+      </body>
+  </worldbody>
+  <actuator>
+    <velocity name="belt_speed" joint="belt_slide" kv="1" ctrlrange="-0.1 0.1" />
+  </actuator>
 
 <!-- baselink
       r_leg

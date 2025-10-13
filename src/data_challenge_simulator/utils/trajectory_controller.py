@@ -9,7 +9,7 @@ class TrajectoryController:
     轨迹控制器 - 持续以指定频率发布当前目标关节角度
     """
     
-    def __init__(self, robot, publish_frequency=200.0):
+    def __init__(self, robot, publish_frequency=100.0):
         """
         初始化轨迹控制器
         Args:

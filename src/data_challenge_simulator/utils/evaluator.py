@@ -193,7 +193,7 @@ class ScoringConfig3:
     # # 计分规则
     time_full: int = 10                    # 时间满分
     time_threshold_sec: int = 30           # ≤10秒得满分
-    time_penalty_per_sec: int = 2          # 超出每秒扣2分，最低0
+    time_penalty_per_sec: int = 1          # 超出每秒扣2分，最低0
 
 class ScoringEvaluator3:
     def __init__(
@@ -272,9 +272,9 @@ class ScoringEvaluator3:
             "deg_back_obj2": None,
 
             # 事件标志（用于上层决定ROS行为）
-            # "front_obj1_triggered": False,   # 本帧触发了中间点加分
-            # "back_obj1_triggered": False,
-            # "back_obj2_triggered": False,
+            "front_obj1_triggered": False,   # 本帧触发了中间点加分
+            "back_obj1_triggered": False,
+            "back_obj2_triggered": False,
 
             "success_triggered": False,        # 本帧首次触发终点成功
             "need_publish_success_true": False,
@@ -396,8 +396,8 @@ class ScoringEvaluator3:
             # 方向10分（只加一次，且仅当朝向正确）
             if is_front_front_obj1 and not self.front_obj1_ori_awarded:
                 self.front_obj1_ori_awarded = True
-                self.score += 15
-                result["score_delta"] += 15
+                self.score += 10
+                result["score_delta"] += 10
                 result["front_obj1_ori_added"] = True
 
             # 当两个子项都拿到时，标记“中间点完成”

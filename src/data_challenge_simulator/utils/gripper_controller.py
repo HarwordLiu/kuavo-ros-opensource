@@ -5,7 +5,7 @@ import time
 import threading
 
 class GripperController:
-    def __init__(self, publish_frequency=200.0):
+    def __init__(self, publish_frequency=100.0):
         """
         初始化夹爪控制器
         Args:
