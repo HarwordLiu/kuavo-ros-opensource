@@ -63,7 +63,7 @@ cd src/kuavo_humanoid_sdk
 roslaunch humanoid_controllers load_kuavo_mujoco_sim.launch
 ```
 
-- 等待机器人加载完成后(！！重要！！加载完成后机器人会正常站立，且Mujoco上不会有pause)退出。若能正常运行则说明环境配置成功。若运行时出现闪退情况，可以多试几次。
+- 等待机器人加载完成后(！！重要！！加载完成后机器人会正常站立，且Mujoco上不会有pause)退出。若能正常运行则说明环境配置成功。若运行时出现机器人摔倒或者闪退情况，可以多试几次或尝试将launch文件中的taskset -c 18改成其他数字（可以尝试1）。
 
 - 后续可在kuavo_ws目录下进入./zshrc，```nano ~/.zshrc```添加
 ```bash
