@@ -2,14 +2,14 @@ import os
 from typing import Optional, List, Tuple
 
 # ======= 在这里配置 =======
-ROOT_DIR  = "/home/ruichen/Downloads/kuavo-ros-control/src/data_challenge_simulator/examples/bags/run_2025-10-06_16-35-32"  # 要遍历的目录
+ROOT_DIR  = "/home/ruichen/Downloads/kuavo-ros-control/src/data_challenge_simulator/examples/bags/run_2025-10-17_17-21-35"  # 要遍历的目录
 EXT       = ".bag"                   # 只检查这个后缀（不区分大小写）
 RECURSIVE = True                     # 是否递归子目录
 
 # 设定大小区间（字节）。不想限制就设为 None
 # 例如 1.2GB = 1.2 * 1024**3
-MIN_SIZE: Optional[int] = int(340 * 1024**2)   # 含下界
-MAX_SIZE: Optional[int] = int(400 * 1024**2)   # 含上界
+MIN_SIZE: Optional[int] = int(850 * 1024**2)   # 含下界
+MAX_SIZE: Optional[int] = int(1000 * 1024**2)   # 含上界
 # =========================
 
 UNITS = {"B":1, "KB":1024, "MB":1024**2, "GB":1024**3}

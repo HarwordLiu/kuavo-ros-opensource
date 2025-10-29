@@ -23,7 +23,9 @@ ROS_TOPICS = [
     '/cam_h/depth/image_raw/compressedDepth',
     '/cam_r/depth/image_rect_raw/compressedDepth',
     '/cam_l/depth/image_rect_raw/compressedDepth',
-    '/cmd_pose_world'
+    '/cmd_pose_world',
+    '/cmd_pose_world_synced',
+    '/kuavo_arm_traj_synced',
 ]
 
 def wait_for_topics(timeout=15):

@@ -12,20 +12,19 @@ from utils.object_pos import ObjectPose
 from utils.object_randomizer import ObjectRandomizer
 from utils.trajectory_controller import TrajectoryController
 from utils.utils import Utils
-from utils.evaluator import ScoringEvaluator3, ScoringConfig3
+from utils.evaluator import ScoringEvaluator4, ScoringConfig4
 import rospy
 from std_msgs.msg import Bool, Int32
 from std_srvs.srv import Trigger, TriggerRequest, TriggerResponse
 import numpy as np
 import json
 
-class SimulatorTask3():
+class SimulatorTask4():
     def __init__(self,seed):
-        rospy.init_node('simulator_task3', anonymous=False)
+        rospy.init_node('simulator_task4', anonymous=False)
 
         self.init_service = rospy.ServiceProxy('/simulator/init', Trigger)
         self.pub_success = rospy.Publisher('/simulator/success',Bool, queue_size=10)
-        # self.pub_score   = rospy.Publisher('/simulator/score', Int32, queue_size=10, latch=True)
         # 等待外部信号
         self.start_service = rospy.Service('/simulator/start', Trigger, self._on_start_service)
         self.reset_service = rospy.Service('/simulator/reset', Trigger, self._on_reset_service)
@@ -39,6 +38,7 @@ class SimulatorTask3():
         self.robot_state = None
         self.gripper_ctrl = None
         self.traj_ctrl = None
+        self.pose_ctrl = None
         self.obj_pos = None
         self.score = 0
         default_score_file = "/tmp/simulator_score_last.txt"
@@ -46,51 +46,80 @@ class SimulatorTask3():
         # 成功状态
         self.started = False
         self.already_reported_success = False
-        self.intermediate_awarded = False
 
         self.seed = seed
         self.obj_pos = ObjectPose()
         self.obj_pos_set = ObjectRandomizer()
 
-        self.marker1_pos = self.obj_pos.wait_for_position("marker1", timeout=5.0)
+        self.item1_pos = self.obj_pos.wait_for_position("item1",timeout=5.0)
+        self.item2_pos = self.obj_pos.wait_for_position("item2",timeout=5.0)
+        self.left_bin_A_pos = self.obj_pos.wait_for_position("left_bin_A", timeout=5.0)
+        self.left_bin_B_pos = self.obj_pos.wait_for_position("left_bin_B", timeout=5.0)
 
-        self.target_region = [
-        (self.marker1_pos[0]-0.18, self.marker1_pos[0]+0.18),   # x 范围
-        (self.marker1_pos[1]-0.18, self.marker1_pos[1]+0.18),   # y 范围
-        (0.685, 0.693)  # z 范围
+        self.target_region1 = [
+            (self.left_bin_A_pos[0]-0.12, self.left_bin_A_pos[0]+0.12),   # x 范围
+            (self.left_bin_A_pos[1]-0.14, self.left_bin_A_pos[1]+0.14),   # y 范围
+            (0.76, 0.9)  # z 范围
         ]
-        # self.target_region = [
-        # (0.16, 0.50),
-        # (0.21, 0.58),
-        # (0.6, 1.00),
-        # ]
+
+        self.target_region2 = [
+            (self.left_bin_B_pos[0]-0.12, self.left_bin_B_pos[0]+0.12),   # x 范围
+            (self.left_bin_B_pos[1]-0.14, self.left_bin_B_pos[1]+0.14),   # y 范围
+            (0.76, 0.9)  # z 范围
+        ]
+
+        self.robot_target_region1 = [
+        (0.83, 0.87),                                                   # x 范围
+        (self.item1_pos[1]+0.30-0.075, self.item1_pos[1]+0.30+0.075),   # y 范围
+        (0.82, 0.83)                                                    # z 范围
+        ]
+        self.robot_target_region2 = [
+        (-0.84, -0.8),   # x 范围
+        (self.left_bin_A_pos[1]-0.30-0.075, self.left_bin_A_pos[1]-0.30+0.075),   # y 范围
+        (0.82, 0.83)  # z 范围
+        ]
+        self.robot_target_region3 = [
+        (0.83, 0.87),   # x 范围
+        (self.item2_pos[1]-0.30-0.075, self.item2_pos[1]-0.30+0.075),   # y 范围
+        (0.82, 0.83)  # z 范围
+        ]
+        self.robot_target_region4 = [
+        (-0.84, -0.8),   # x 范围
+        (self.left_bin_B_pos[1]+0.30-0.075, self.left_bin_B_pos[1]+0.30+0.075),   # y 范围
+        (0.82, 0.83)  # z 范围
+        ]
 
         # 记录分项是否达成
-        self.comp_back_obj1_pos = False
-        self.comp_back_obj1_ori = False
-        self.comp_back_obj2_pos = False
-        self.comp_back_obj2_ori = False
-        self.comp_front_obj1_pos = False
-        self.comp_front_obj1_ori = False
+        self.comp_item1_pos = False
+        self.comp_item2_pos = False
+        self.comp_robot_pos1 = False
+        self.comp_robot_pos2 = False
+        self.comp_robot_pos3 = False
+        self.comp_robot_pos4 = False
         self.comp_time_score = 0
 
 
-        self.evaluator = ScoringEvaluator3(
-            ScoringConfig3(
-                target_region=self.target_region,
-                body_front_axis='-y',
-                front_world_dir='z',
-                tol_deg=5.0,
+        self.evaluator = ScoringEvaluator4(
+            ScoringConfig4(
+                target_region1=self.target_region1,
+                target_region2=self.target_region2,
+
+                robot_target_region1=self.robot_target_region1,
+                robot_target_region2=self.robot_target_region2,
+                robot_target_region3=self.robot_target_region3,
+                robot_target_region4=self.robot_target_region4,
+
                 time_full=10,
-                time_threshold_sec=30,
+                time_threshold_sec=65,
                 time_penalty_per_sec=1,
+
+                x_L_in=0.4,
+                x_L_out=0.2,
+                x_R_in=-0.4,
+                x_R_out=-0.2
+
             ),
             is_in_region_fn=lambda pos, region: Utils.is_in_target_region(pos, region),
-            is_front_facing_fn=lambda quat_xyzw, body_front_axis, front_world_dir, tol_deg:
-                Utils.is_front_facing(quat_xyzw=quat_xyzw,
-                                    body_front_axis=body_front_axis,
-                                    front_world_dir=front_world_dir,
-                                    tol_deg=tol_deg)
         )
     # ========== 服务回调 - 等待外部信号 ==========
     def _on_start_service(self, req):
@@ -117,26 +146,20 @@ class SimulatorTask3():
         z = float(rng.uniform(*region["z"]))
         return x, y, z
     
-    def _randomize_objects_with_seed(self,seed: int, regions: dict, FRONT: list, BACK: list):
+    def _randomize_objects_with_seed(self,seed: int, regions: dict, bin_ori: list, item_ori: list, bin_list: list):
         """
         使用固定seed随机化多个物体的位置和朝向
         regions: dict
         FRONT/BACK: 四元数 [w, x, y, z]
         """
-        rng = np.random.default_rng(int(seed))
-        all_objects = list(regions.keys())
-
-        # 随机选一个front，其余是back
-        front_objects = rng.choice(all_objects, size=1, replace=False)
-        back_objects = [obj for obj in all_objects if obj not in front_objects]
 
         object_configs = []
         for name, region in regions.items():
             x, y, z = self._sample_position_with_seed(seed, region)
-            if name in front_objects:
-                qw, qx, qy, qz = FRONT
+            if name in bin_list:
+                qw, qx, qy, qz = bin_ori
             else:
-                qw, qx, qy, qz = BACK
+                qw, qx, qy, qz = item_ori
 
             object_configs.append({
                 "name": name,
@@ -152,11 +175,6 @@ class SimulatorTask3():
 
         # 应用到仿真
         self.obj_pos_set.randomize_multiple_objects(object_configs)
-
-        return {
-            "front": list(front_objects),
-            "back": back_objects
-        }
     
     # ========== 主流程 ==========
     def run(self):
@@ -173,35 +191,21 @@ class SimulatorTask3():
             self.robot_state = KuavoRobotState()
 
             REGIONS = {
-                "shampoo1": {"x": (0.13, 0.38), "y": (-0.2, -0.1), "z": (0.69, 0.69)},  # 区域 A
-                "shampoo2": {"x": (0.13, 0.38), "y": (-0.35, -0.25), "z": (0.69, 0.69)},  # 区域 B
-                "shampoo3": {"x": (0.13, 0.38), "y": (-0.48, -0.40), "z": (0.69, 0.69)},  # 区域 C
+                "item1": {"x": (1.28, 1.38), "y": (-0.6, -0.1), "z": (0.9, 0.9)},  # 区域 A
+                "item2": {"x": (1.28, 1.38), "y": (0.1, 0.6), "z": (0.9, 0.9)},  # 区域 B
+                "left_bin_A": {"x": (-1.35, -1.35), "y": (0.15, 0.6), "z": (0.76, 0.76)},  # 区域 C
+                "left_bin_B": {"x": (-1.35, -1.35), "y": (-0.6, -0.15), "z": (0.76, 0.76)},  # 区域 C
             }
 
-            FRONT = [0.5, -0.5, 0.5, -0.5]  # (w, x, y, z)
-            BACK = [0.5, 0.5, 0.5, 0.5]
-
+            bin_ori = [0.7071, 0, 0, 0.7071]  # (w, x, y, z)
+            item_ori = [1, 0, 0, 0]
+            bin_list = ["left_bin_A", "left_bin_B"]
             # 随机化物体位置
-            result = self._randomize_objects_with_seed(seed=self.seed, regions=REGIONS, FRONT=FRONT, BACK=BACK)
-            obj1, obj2 = result["back"]
-            obj3 = result["front"][0]
-            print("\033[92mBACK,BACK,FRONT\033[0m",obj1,obj2,obj3)
+            self._randomize_objects_with_seed(seed=self.seed, regions=REGIONS, bin_ori=bin_ori, item_ori=item_ori, bin_list=bin_list)
 
             # 2) 预抓位
-            num = 30
-            q1_target1 = [60, 0, 0, -100, 0, 0, 0,   70, 0, 0, -135, 70, 40, 0]
-            q1_list1 = Utils.interpolate_joint_trajectory(q1_target1, num = num) 
-                
-            q1_target2 = [30, 0, 0, -140, 70, 0, 0,   10, 5, 0, -130, 90, 90, 0]
-            q1_list2 = Utils.interpolate_joint_trajectory(q1_target2, q1_target1, num = num)
-
-            for q in q1_list1 :
-                self.robot.control_arm_joint_positions(q)
-                time.sleep(0.02)
-            for q in q1_list2:
-                self.robot.control_arm_joint_positions(q)
-                time.sleep(0.02)
-            
+            self.robot.control_head(yaw=0, pitch=math.radians(5))
+            self.robot.set_external_control_arm_mode()
             # 3) 发布 msg0：init=True
             rospy.wait_for_service('/simulator/init')
             try:
@@ -232,19 +236,15 @@ class SimulatorTask3():
             
             while not rospy.is_shutdown() and not self.reset_evt.is_set():
                 try:
-                    pos_back_obj1 = self.obj_pos.get_position(obj1)
-                    ori_back_obj1 = self.obj_pos.get_orientation(obj1)
+                    item1_pos = self.obj_pos.get_position("item1")
+                    item2_pos = self.obj_pos.get_position("item2")
+                    robot_pos = self.robot_state.odometry.position
 
-                    pos_back_obj2 = self.obj_pos.get_position(obj2)
-                    ori_back_obj2 = self.obj_pos.get_orientation(obj2)
-
-                    pos_front_obj1 = self.obj_pos.get_position(obj3)
-                    ori_front_obj1 = self.obj_pos.get_orientation(obj3)
                 except Exception as e:
-                    rospy.logwarn(f"[sim] 获取位置/姿态出错：{e}")
-                    pos_back_obj1, ori_back_obj1,pos_back_obj2,ori_back_obj2,pos_front_obj1,ori_front_obj1 = None, None, None, None, None, None
+                    rospy.logwarn(f"[sim] 获取位置出错：{e}")
+                    item1_pos, item2_pos,robot_pos = None, None, None
 
-                if pos_back_obj1 is None or ori_back_obj1 is None or pos_back_obj2 is None or ori_back_obj2 is None or pos_front_obj1 is None or ori_front_obj1 is None:
+                if item1_pos is None or item2_pos is None or robot_pos is None:
                     # 取不到传感就当未成功
                     # 未成功阶段持续发 False
                     self.pub_success.publish(Bool(data=False))
@@ -254,14 +254,14 @@ class SimulatorTask3():
                     continue
 
                 # 调用通用评估器
-                out = self.evaluator.evaluate(pos_front_obj1,ori_front_obj1, pos_back_obj1, ori_back_obj1, pos_back_obj2, ori_back_obj2, now=time.time())
+                out = self.evaluator.evaluate(pos_xyz_item1= item1_pos,pos_xyz_item2=item2_pos, robot_pos= robot_pos, now=time.time())
 
-                if out.get("back_obj1_pos_added"): self.comp_back_obj1_pos = True
-                if out.get("back_obj1_ori_added"): self.comp_back_obj1_ori = True
-                if out.get("back_obj2_pos_added"): self.comp_back_obj2_pos = True
-                if out.get("back_obj2_ori_added"): self.comp_back_obj2_ori = True
-                if out.get("front_obj1_pos_added"): self.comp_front_obj1_pos = True
-                if out.get("front_obj1_pos_added"): self.comp_front_obj1_ori = True
+                if out.get("item1_triggered"): self.comp_item1_pos = True
+                if out.get("item2_triggered"): self.comp_item2_pos = True
+                if out.get("robot_pos1_triggered"): self.comp_robot_pos1 = True
+                if out.get("robot_pos2_triggered"): self.comp_robot_pos2 = True
+                if out.get("robot_pos3_triggered"): self.comp_robot_pos3 = True
+                if out.get("robot_pos4_triggered"): self.comp_robot_pos4 = True
 
                 ts_add = out.get("time_score_added")
                 if isinstance(ts_add, (int, float)):
@@ -275,23 +275,35 @@ class SimulatorTask3():
                 elif out["need_publish_success_false"]:
                     self.pub_success.publish(Bool(data=False))
 
-                if out["back_obj1_pos_added"] or out["back_obj1_ori_added"]:
+                if out["item1_pos_added"]:
                     parts = []
-                    if out["back_obj1_pos_added"]: parts.append("+10(位置)")
-                    if out["back_obj1_ori_added"]: parts.append("+25(方向)")
-                    rospy.loginfo(f"[sim] 🟡 反面物体1放置成功：{' '.join(parts)}，总分 {out['total_score']}")
+                    parts.append("+25(物料1)")
+                    rospy.loginfo(f"[sim] 🟡 物料1放置成功：{' '.join(parts)}，总分 {out['total_score']}")
 
-                if out["back_obj2_pos_added"] or out["back_obj2_ori_added"]:
+                if out["item2_pos_added"]:
                     parts = []
-                    if out["back_obj2_pos_added"]: parts.append("+10(位置)")
-                    if out["back_obj2_ori_added"]: parts.append("+25(方向)")
-                    rospy.loginfo(f"[sim] 🟡 反面物体2放置成功：{' '.join(parts)}，总分 {out['total_score']}")
+                    parts.append("+25(物料2)")
+                    rospy.loginfo(f"[sim] 🟡 物料2放置成功：{' '.join(parts)}，总分 {out['total_score']}")
 
-                if out["front_obj1_pos_added"] or out["front_obj1_ori_added"]:
+                if out["robot_pos1_triggered"]:
                     parts = []
-                    if out["front_obj1_pos_added"]: parts.append("+10(位置)")
-                    if out["front_obj1_ori_added"]: parts.append("+10(方向)")
-                    rospy.loginfo(f"[sim] 🟡 正面物体放置成功：{' '.join(parts)}，总分 {out['total_score']}")
+                    parts.append("+10(抓取位置1)")
+                    rospy.loginfo(f"[sim] 🟡 抓取位置1到达：{' '.join(parts)}，总分 {out['total_score']}")
+
+                if out["robot_pos2_triggered"]:
+                    parts = []
+                    parts.append("+10(放置位置1)")
+                    rospy.loginfo(f"[sim] 🟡 放置位置1到达：{' '.join(parts)}，总分 {out['total_score']}")
+
+                if out["robot_pos3_triggered"]:
+                    parts = []
+                    parts.append("+10(抓取位置2)")
+                    rospy.loginfo(f"[sim] 🟡 抓取位置2到达：{' '.join(parts)}，总分 {out['total_score']}")
+
+                if out["robot_pos4_triggered"]:
+                    parts = []
+                    parts.append("+10(放置位置2)")
+                    rospy.loginfo(f"[sim] 🟡 放置位置2到达：{' '.join(parts)}，总分 {out['total_score']}")                    
 
                 if out["success_triggered"]:
                     parts = []
@@ -337,12 +349,12 @@ class SimulatorTask3():
                 detail_json_path = base + ".json"
                 components = {}
 
-                if self.comp_back_obj1_pos: components["back_obj1_pos"]=10
-                if self.comp_back_obj1_ori: components["back_obj1_ori"]=25
-                if self.comp_back_obj2_pos: components["back_obj2_pos"]=10
-                if self.comp_back_obj2_ori: components["back_obj2_ori"]=25
-                if self.comp_front_obj1_pos: components["front_obj1_pos"]=10
-                if self.comp_front_obj1_ori: components["front_obj1_pos"]=10
+                if self.comp_item1_pos: components["item1_pos"]=25
+                if self.comp_item2_pos: components["item2_pos"]=25
+                if self.comp_robot_pos1: components["robot_pos1"]=10
+                if self.comp_robot_pos2: components["robot_pos2"]=10
+                if self.comp_robot_pos3: components["robot_pos3"]=10
+                if self.comp_robot_pos4: components["robot_pos4"]=10
 
                 # 时间得分：如果累计不到，可以按需要从总分反推；这里优先用累计值
                 if self.comp_time_score and self.comp_time_score > 0:
@@ -366,5 +378,5 @@ if __name__ == "__main__":
     parser.add_argument("--seed",type = int)
     args = parser.parse_args()
     seed = args.seed
-    task = SimulatorTask3(seed)
+    task = SimulatorTask4(seed)
     task.run()

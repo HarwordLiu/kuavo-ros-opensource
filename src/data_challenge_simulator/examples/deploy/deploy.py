@@ -30,8 +30,8 @@ cfg1 = {
             "attributes": {
                 "pos": {  # 基于 (0.52, -0.50, 0.8721)
                     "per_dim": [
-                        {"uniform": [0.35, 0.52]},    # x
-                        {"uniform": [-0.05, -0.08]},  # y
+                        {"uniform": [0.36, 0.52]},    # x
+                        {"uniform": [-0.05, 0.08]},  # y
                         {"set": 0.8721}               # z 固定（也可用小范围 uniform）
                     ]
                 }
@@ -102,8 +102,8 @@ cfg2 = {
             "attributes": {
                 "pos": {  # 基于 (0.52, -0.50, 0.8721)
                     "per_dim": [
-                        {"uniform": [0.35, 0.50]},    # x
-                        {"uniform": [0.05, 0.20]},  # y
+                        {"uniform": [0.30, 0.50]},    # x
+                        {"uniform": [0.05, 0.25]},  # y
                         {"set": 0.89}               # z 固定
                     ]
                 }
@@ -123,7 +123,7 @@ cfg2 = {
                 "pos": {  # 基于 (0.42, -0.03, 0.8721)
                     "per_dim": [
                         {"uniform": [0.3, 0.50]},    # x
-                        {"uniform": [0.45, 0.68]},   # y
+                        {"uniform": [0.4, 0.7]},   # y
                         {"set": 0.871}               # z 固定
                     ]
                 }
@@ -351,7 +351,7 @@ def run_task(task_id: int, headless: bool):
     # === 无限循环，直到 Ctrl+C 结束 ===
     cycle_idx = 1
     while True:
-        seed = 41 + cycle_idx
+        seed = 123123 + cycle_idx
 
         if task_id==1 or task_id==2 or task_id==3:
 

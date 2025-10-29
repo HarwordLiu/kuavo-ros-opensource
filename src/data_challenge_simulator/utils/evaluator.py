@@ -431,3 +431,295 @@ class ScoringEvaluator3:
 
         result["total_score"] = self.score
         return result
+    
+
+@dataclass
+class ScoringConfig4:
+    # 物体目标区（例：三角形三个顶点）
+    target_region1: Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]
+    target_region2: Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]
+
+    # 机器人 1~4 区域（允许 1&3、2&4 重合）
+    robot_target_region1: Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]
+    robot_target_region2: Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]
+    robot_target_region3: Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]
+    robot_target_region4: Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]
+
+    # 计分
+    time_full: int = 20
+    time_threshold_sec: int = 65
+    time_penalty_per_sec: int = 1
+
+    # 进入左区的界（更靠外），退出回中区的界（更靠内；应大于 x_L_in）
+    x_L_in: float = -0.50
+    x_L_out: float = -0.30
+    # 进入右区的界（更靠外），退出回中区的界（更靠内；应小于 x_R_in）
+    x_R_in: float = 0.50
+    x_R_out: float = 0.30
+
+
+class ScoringEvaluator4:
+    def __init__(
+        self,
+        config: ScoringConfig4,
+        is_in_region_fn: Callable[[Tuple[float, float, float], Any], bool],
+    ):
+        self.cfg = config
+        self._is_in_region = is_in_region_fn
+
+        self.score: int = 0
+        self.already_reported_success: bool = False
+
+        self.item1_pos_awarded: bool = False
+        self.item2_pos_awarded: bool = False
+
+        # 机器人 1~4 的“事件是否已经触发过”
+        self.robot_pos1_awarded: bool = False
+        self.robot_pos2_awarded: bool = False
+        self.robot_pos3_awarded: bool = False
+        self.robot_pos4_awarded: bool = False
+
+        self.start_time: float = time.time()
+
+        # —— 相位（严格顺序）：1=R1, 2=L1, 3=R2, 4=L2 —— #
+        self.phase: int = 1
+
+        # —— 三分区 + 许可 —— #
+        self.zone: str = 'M'      # 'L'/'M'/'R'
+        self.permit_R: bool = False
+        self.permit_L: bool = False
+
+    def reset(self, start_time: Optional[float] = None):
+        self.score = 0
+        self.already_reported_success = False
+
+        self.item1_pos_awarded = False
+        self.item2_pos_awarded = False
+
+        self.robot_pos1_awarded = False
+        self.robot_pos2_awarded = False
+        self.robot_pos3_awarded = False
+        self.robot_pos4_awarded = False
+
+        self.start_time = time.time() if start_time is None else start_time
+
+        self.phase = 1
+        self.zone = 'M'
+        self.permit_R = False
+        self.permit_L = False
+
+    # =========================
+    # 三分区更新（带迟滞 + 上升沿开许可 + 回中自动跳过）
+    # =========================
+    def _skip_if_needed(self, side: str):
+        """
+        在从侧区回到中区时，如果仍持有该侧许可，说明本次没有命中目标；
+        则按严格顺序跳过当前期望的该步。
+        """
+        if self.phase == 1 and side == 'R':
+            self.phase = 2  # 跳过 R1 -> 期望 L1
+        elif self.phase == 2 and side == 'L':
+            self.phase = 3  # 跳过 L1 -> 期望 R2
+        elif self.phase == 3 and side == 'R':
+            self.phase = 4  # 跳过 R2 -> 期望 L2
+        elif self.phase == 4 and side == 'L':
+            self.phase = 5  # 跳过 L2 -> 流程结束
+
+    def _update_zone(self, x: float):
+        # 当前在中区：只有“进入外侧界”才切换，并开对应许可（上升沿）
+        if self.zone == 'M':
+            if x <= self.cfg.x_L_in:
+                self.zone = 'L'
+                # 开左侧许可，关右许可
+                self.permit_L = True
+                self.permit_R = False
+            elif x >= self.cfg.x_R_in:
+                self.zone = 'R'
+                self.permit_R = True
+                self.permit_L = False
+
+        # 当前在左区：只有“回到内侧界”才回中区；若仍持有左许可则跳过
+        elif self.zone == 'L':
+            if x >= self.cfg.x_L_out:
+                self.zone = 'M'
+                if self.permit_L:
+                    self._skip_if_needed('L')
+                self.permit_L = False
+
+        # 当前在右区：只有“回到内侧界”才回中区；若仍持有右许可则跳过
+        else:  # 'R'
+            if x <= self.cfg.x_R_out:
+                self.zone = 'M'
+                if self.permit_R:
+                    self._skip_if_needed('R')
+                self.permit_R = False
+
+    # =========================
+    # 在“有许可”的前提下尝试命中当前相位
+    # =========================
+    def _try_hit_with_permit(self, robot_pos, result) -> bool:
+        """
+        命中返回 True，否则 False
+        只有当当前相位与对应侧的许可同时满足时，才会检查区域命中。
+        命中后加分并推进相位，清除该侧许可。
+        """
+        if self.phase > 4:
+            return False
+
+        region = None
+        side = None
+
+        if self.phase == 1 and self.permit_R:
+            region = self.cfg.robot_target_region1; side = 'R'
+        elif self.phase == 2 and self.permit_L:
+            region = self.cfg.robot_target_region2; side = 'L'
+        elif self.phase == 3 and self.permit_R:
+            region = self.cfg.robot_target_region3; side = 'R'
+        elif self.phase == 4 and self.permit_L:
+            region = self.cfg.robot_target_region4; side = 'L'
+        else:
+            return False  # 没有对应许可，不检查命中
+
+        try:
+            in_region = self._is_in_region(robot_pos, region)
+        except Exception:
+            in_region = False
+
+        if not in_region:
+            return False
+
+        # —— 命中：加分并推进 —— #
+        if self.phase == 1 and not self.robot_pos1_awarded:
+            self.robot_pos1_awarded = True
+            self.score += 10
+            result["robot_pos1_triggered"] = True
+            result["score_delta"] += 10
+        elif self.phase == 2 and not self.robot_pos2_awarded:
+            self.robot_pos2_awarded = True
+            self.score += 10
+            result["robot_pos2_triggered"] = True
+            result["score_delta"] += 10
+        elif self.phase == 3 and not self.robot_pos3_awarded:
+            self.robot_pos3_awarded = True
+            self.score += 10
+            result["robot_pos3_triggered"] = True
+            result["score_delta"] += 10
+        elif self.phase == 4 and not self.robot_pos4_awarded:
+            self.robot_pos4_awarded = True
+            self.score += 10
+            result["robot_pos4_triggered"] = True
+            result["score_delta"] += 10
+
+        self.phase += 1
+        if side == 'R':
+            self.permit_R = False
+        else:
+            self.permit_L = False
+        return True
+
+    # =========================
+    # 主评估
+    # =========================
+    def evaluate(
+        self,
+        pos_xyz_item1: Tuple[float, float, float],
+        pos_xyz_item2: Tuple[float, float, float],
+        robot_pos: Tuple[float, float, float],
+        now: Optional[float] = None,
+    ) -> Dict[str, Any]:
+
+        now = time.time() if now is None else now
+        result = {
+            "in_region_item1": False,
+            "in_region_item2": False,
+            "in_region_robot1": False,
+            "in_region_robot2": False,
+            "in_region_robot3": False,
+            "in_region_robot4": False,
+
+            "item1_triggered": False,
+            "item2_triggered": False,
+            "robot_pos1_triggered": False,
+            "robot_pos2_triggered": False,
+            "robot_pos3_triggered": False,
+            "robot_pos4_triggered": False,
+
+            "success_triggered": False,
+            "need_publish_success_true": False,
+            "need_publish_success_false": False,
+
+            "score_delta": 0,
+            "total_score": self.score,
+            "elapsed_sec": now - self.start_time,
+            "item1_pos_added": False,
+            "item2_pos_added": False,
+            "time_score_added": 0,
+        }
+
+        # —— 区域布尔值（和你原逻辑一致）——
+        try:
+            in_region_item1 = self._is_in_region(pos_xyz_item1, self.cfg.target_region1)
+            in_region_item2 = self._is_in_region(pos_xyz_item2, self.cfg.target_region2)
+
+            in_region_robot1 = self._is_in_region(robot_pos, self.cfg.robot_target_region1)
+            in_region_robot2 = self._is_in_region(robot_pos, self.cfg.robot_target_region2)
+            in_region_robot3 = self._is_in_region(robot_pos, self.cfg.robot_target_region3)
+            in_region_robot4 = self._is_in_region(robot_pos, self.cfg.robot_target_region4)
+        except Exception:
+            in_region_item1 = in_region_item2 = False
+            in_region_robot1 = in_region_robot2 = in_region_robot3 = in_region_robot4 = False
+
+        result["in_region_item1"] = in_region_item1
+        result["in_region_item2"] = in_region_item2
+        result["in_region_robot1"] = in_region_robot1
+        result["in_region_robot2"] = in_region_robot2
+        result["in_region_robot3"] = in_region_robot3
+        result["in_region_robot4"] = in_region_robot4
+
+        # —— 物体位置加分（保持你原逻辑）——
+        if in_region_item1 and not self.item1_pos_awarded:
+            self.item1_pos_awarded = True
+            self.score += 25
+            result["score_delta"] += 25
+            result["item1_triggered"] = True
+            result["item1_pos_added"] = True
+
+        if in_region_item2 and not self.item2_pos_awarded:
+            self.item2_pos_awarded = True
+            self.score += 25
+            result["score_delta"] += 25
+            result["item2_triggered"] = True
+            result["item2_pos_added"] = True
+
+        # =========================
+        # 三分区 + 许可式相位推进（纯几何，无时间/帧）
+        # =========================
+        x = robot_pos[0]
+        self._update_zone(x)                         # 先根据 x 更新 L/M/R 与许可/跳过
+        _ = self._try_hit_with_permit(robot_pos, result)  # 如有许可则尝试命中当前相位
+
+        # —— 终点成功（保持你原有时间分规则）——
+        if self.item1_pos_awarded and self.item2_pos_awarded and (not self.already_reported_success):
+            self.already_reported_success = True
+            result["success_triggered"] = True
+            result["need_publish_success_true"] = True
+            result["need_stop_conveyor"] = True
+
+            elapsed = now - self.start_time
+            if elapsed <= self.cfg.time_threshold_sec:
+                time_score = self.cfg.time_full
+            else:
+                over = elapsed - self.cfg.time_threshold_sec
+                time_score = max(0, self.cfg.time_full - over * self.cfg.time_penalty_per_sec)
+
+            self.score += time_score
+            result["score_delta"] += time_score
+            result["elapsed_sec"] = elapsed
+            result["time_score_added"] = int(time_score)
+        else:
+            if not self.already_reported_success:
+                result["need_publish_success_false"] = True
+
+        result["total_score"] = self.score
+        return result
+

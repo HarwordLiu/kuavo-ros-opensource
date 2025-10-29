@@ -37,8 +37,8 @@ def main():
     num = 20
 
     grasp_region = [
-        (marker1_pos[0]-0.03, marker1_pos[0]+0.03),   # x 范围
-        (marker1_pos[1]-0.03, marker1_pos[1]+0.03),   # y 范围
+        (marker1_pos[0]-0.035, marker1_pos[0]+0.035),   # x 范围
+        (marker1_pos[1]-0.035, marker1_pos[1]+0.035),   # y 范围
         (0.85, 0.98)  # z 范围
     ]
     target_region = [

@@ -225,11 +225,11 @@
       <!-- 箱（倾斜） -->
       <body name="right_bin_A" pos="1.33 0.00 0.75" euler="0 -0.05 1.57">
 
-      <geom type="box" size="0.60 0.14 0.005" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-      <geom type="box" size="0.60 0.005 0.04" pos="0  0.145 0.04" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-      <geom type="box" size="0.60 0.005 0.04" pos="0 -0.145 0.04" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-      <geom type="box" size="0.005 0.14 0.04" pos=" 0.605 0 0.04" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
-      <geom type="box" size="0.005 0.14 0.04" pos="-0.605 0 0.04" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.90 0.16 0.005" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.90 0.005 0.04" pos="0  0.155 0.04" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.90 0.005 0.04" pos="0 -0.16 0.04" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.005 0.15 0.04" pos=" 0.905 -0.005 0.04" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
+      <geom type="box" size="0.005 0.15 0.04" pos="-0.905 -0.005 0.04" rgba="0.20 0.55 1.00 1" friction="1.0 0.01 0.0001"/>
       </body>
 
       <!-- 箱 -->

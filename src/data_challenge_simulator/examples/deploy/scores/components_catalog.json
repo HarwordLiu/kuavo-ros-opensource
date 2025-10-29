@@ -2,5 +2,5 @@
   "1": ["intermediate_pos", "intermediate_ori", "final_pos", "final_ori", "time"],
   "2": ["intermediate_pos", "intermediate_ori", "final_pos", "final_ori", "time"],
   "3": ["back_obj1_pos","back_obj1_ori","back_obj2_pos","back_obj2_ori","front_obj1_pos","front_obj1_ori","time"],
-  "4": []
+  "4": ["item1_pos","item2_pos","robot_pos1","robot_pos2","robot_pos3","robot_pos4","time"]
 }
