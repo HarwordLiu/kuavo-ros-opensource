@@ -51,44 +51,6 @@ class SimulatorTask4():
         self.obj_pos = ObjectPose()
         self.obj_pos_set = ObjectRandomizer()
 
-        self.item1_pos = self.obj_pos.wait_for_position("item1",timeout=5.0)
-        self.item2_pos = self.obj_pos.wait_for_position("item2",timeout=5.0)
-        self.left_bin_A_pos = self.obj_pos.wait_for_position("left_bin_A", timeout=5.0)
-        self.left_bin_B_pos = self.obj_pos.wait_for_position("left_bin_B", timeout=5.0)
-
-        self.target_region1 = [
-            (self.left_bin_A_pos[0]-0.12, self.left_bin_A_pos[0]+0.12),   # x 范围
-            (self.left_bin_A_pos[1]-0.14, self.left_bin_A_pos[1]+0.14),   # y 范围
-            (0.76, 0.9)  # z 范围
-        ]
-
-        self.target_region2 = [
-            (self.left_bin_B_pos[0]-0.12, self.left_bin_B_pos[0]+0.12),   # x 范围
-            (self.left_bin_B_pos[1]-0.14, self.left_bin_B_pos[1]+0.14),   # y 范围
-            (0.76, 0.9)  # z 范围
-        ]
-
-        self.robot_target_region1 = [
-        (0.83, 0.87),                                                   # x 范围
-        (self.item1_pos[1]+0.30-0.075, self.item1_pos[1]+0.30+0.075),   # y 范围
-        (0.82, 0.83)                                                    # z 范围
-        ]
-        self.robot_target_region2 = [
-        (-0.84, -0.8),   # x 范围
-        (self.left_bin_A_pos[1]-0.30-0.075, self.left_bin_A_pos[1]-0.30+0.075),   # y 范围
-        (0.82, 0.83)  # z 范围
-        ]
-        self.robot_target_region3 = [
-        (0.83, 0.87),   # x 范围
-        (self.item2_pos[1]-0.30-0.075, self.item2_pos[1]-0.30+0.075),   # y 范围
-        (0.82, 0.83)  # z 范围
-        ]
-        self.robot_target_region4 = [
-        (-0.84, -0.8),   # x 范围
-        (self.left_bin_B_pos[1]+0.30-0.075, self.left_bin_B_pos[1]+0.30+0.075),   # y 范围
-        (0.82, 0.83)  # z 范围
-        ]
-
         # 记录分项是否达成
         self.comp_item1_pos = False
         self.comp_item2_pos = False
@@ -99,28 +61,6 @@ class SimulatorTask4():
         self.comp_time_score = 0
 
 
-        self.evaluator = ScoringEvaluator4(
-            ScoringConfig4(
-                target_region1=self.target_region1,
-                target_region2=self.target_region2,
-
-                robot_target_region1=self.robot_target_region1,
-                robot_target_region2=self.robot_target_region2,
-                robot_target_region3=self.robot_target_region3,
-                robot_target_region4=self.robot_target_region4,
-
-                time_full=10,
-                time_threshold_sec=65,
-                time_penalty_per_sec=1,
-
-                x_L_in=0.4,
-                x_L_out=0.2,
-                x_R_in=-0.4,
-                x_R_out=-0.2
-
-            ),
-            is_in_region_fn=lambda pos, region: Utils.is_in_target_region(pos, region),
-        )
     # ========== 服务回调 - 等待外部信号 ==========
     def _on_start_service(self, req):
         """等待外部代码发送 start 信号"""
@@ -203,8 +143,68 @@ class SimulatorTask4():
             # 随机化物体位置
             self._randomize_objects_with_seed(seed=self.seed, regions=REGIONS, bin_ori=bin_ori, item_ori=item_ori, bin_list=bin_list)
 
+            self.item1_pos = self.obj_pos.wait_for_position("item1",timeout=5.0)
+            self.item2_pos = self.obj_pos.wait_for_position("item2",timeout=5.0)
+            self.left_bin_A_pos = self.obj_pos.wait_for_position("left_bin_A", timeout=5.0)
+            self.left_bin_B_pos = self.obj_pos.wait_for_position("left_bin_B", timeout=5.0)
+
+            self.target_region1 = [
+                (self.left_bin_A_pos[0]-0.12, self.left_bin_A_pos[0]+0.12),   # x 范围
+                (self.left_bin_A_pos[1]-0.14, self.left_bin_A_pos[1]+0.14),   # y 范围
+                (0.84, 0.86)  # z 范围
+            ]
+
+            self.target_region2 = [
+                (self.left_bin_B_pos[0]-0.12, self.left_bin_B_pos[0]+0.12),   # x 范围
+                (self.left_bin_B_pos[1]-0.14, self.left_bin_B_pos[1]+0.14),   # y 范围
+                (0.84, 0.86)  # z 范围
+            ]
+
+            self.robot_target_region1 = [
+            (0.83, 0.87),                                                   # x 范围
+            (self.item1_pos[1]+0.30-0.075, self.item1_pos[1]+0.30+0.075),   # y 范围
+            (0.82, 0.83)                                                    # z 范围
+            ]
+            self.robot_target_region2 = [
+            (-0.84, -0.8),   # x 范围
+            (self.left_bin_A_pos[1]-0.30-0.075, self.left_bin_A_pos[1]-0.30+0.075),   # y 范围
+            (0.82, 0.83)  # z 范围
+            ]
+            self.robot_target_region3 = [
+            (0.83, 0.87),   # x 范围
+            (self.item2_pos[1]-0.30-0.075, self.item2_pos[1]-0.30+0.075),   # y 范围
+            (0.82, 0.83)  # z 范围
+            ]
+            self.robot_target_region4 = [
+            (-0.84, -0.8),   # x 范围
+            (self.left_bin_B_pos[1]+0.30-0.075, self.left_bin_B_pos[1]+0.30+0.075),   # y 范围
+            (0.82, 0.83)  # z 范围
+            ]
+
+            self.evaluator = ScoringEvaluator4(
+                ScoringConfig4(
+                    target_region1=self.target_region1,
+                    target_region2=self.target_region2,
+
+                    robot_target_region1=self.robot_target_region1,
+                    robot_target_region2=self.robot_target_region2,
+                    robot_target_region3=self.robot_target_region3,
+                    robot_target_region4=self.robot_target_region4,
+
+                    time_full=10,
+                    time_threshold_sec=65,
+                    time_penalty_per_sec=1,
+
+                    x_L_in=0.4,
+                    x_L_out=0.2,
+                    x_R_in=-0.4,
+                    x_R_out=-0.2
+
+                ),
+                is_in_region_fn=lambda pos, region: Utils.is_in_target_region(pos, region),
+                )
             # 2) 预抓位
-            self.robot.control_head(yaw=0, pitch=math.radians(5))
+            self.robot.control_head(yaw=0, pitch=math.radians(12))
             self.robot.set_external_control_arm_mode()
             # 3) 发布 msg0：init=True
             rospy.wait_for_service('/simulator/init')

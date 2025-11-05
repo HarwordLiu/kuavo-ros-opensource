@@ -10,6 +10,24 @@ import argparse
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+LIMIT_ANGLE = [
+        [-180, 90], #L1
+        [-20, 120], #L2
+        [-90, 90], #L3
+        [-150, 0], #L4
+        [-90, 90], #L5
+        [-75, 40], #L6
+        [-40, 40], #L7
+
+        [-180, 90], #R1
+        [-120, 20], #R2
+        [-90, 90], #R3
+        [-150, 0], #R4
+        [-90, 90], #R5
+        [-40, 75], #R6
+        [-40, 40], #R7
+]
+
 ROS_TOPICS = [
     '/gripper/command',
     '/gripper/state',

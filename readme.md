@@ -90,6 +90,10 @@ python3 deploy.py
 
 每一轮的得分和目前的平均分会在terminal中显示，只取有效的数据计入总成绩
 
+Note: 这里如果运行deploy.py时，仿真环境没有启动，一直报错：Timeout waiting for marker1, 解决方案如下：
+1. 先运行```roslaunch data_challenge_simulator load_kuavo_mujoco_sim1.launch```, 检查是否能正常启动仿真环境
+2. 若可以正常运行，打开src/data_challenge_simulator/examples/deploy/deploy.py文件，在第385行的sleep处，改为5s或者更长(根据需要调整)
+3. 如果不能正常运行，请先检查第8步是否正常
 
 ## 数据与任务说明
 ### 数据说明

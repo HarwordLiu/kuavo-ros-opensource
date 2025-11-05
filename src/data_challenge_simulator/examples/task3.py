@@ -98,7 +98,7 @@ def main():
         q1_target1 = [60, 0, 0, -100, 0, 0, 0,   70, 0, 0, -135, 70, 40, 0]
         q1_list1 = Utils.interpolate_joint_trajectory(q1_target1, num = num) 
             
-        q1_target2 = [30, 0, 0, -140, 70, 0, 0,   10, 5, 0, -130, 90, 90, 0]
+        q1_target2 = [30, 0, 0, -140, 70, 0, 0,   10, 5, 0, -130, 90, 75, 0]
         q1_list2 = Utils.interpolate_joint_trajectory(q1_target2, q1_target1, num = num)
 
         print("移动到第一个物体预抓位")
@@ -162,13 +162,13 @@ def main():
         time.sleep(0.5)
 
         # 后续动作 - 使用高频轨迹控制器
-        q1_target3 = [-10, 20, -40, -110, -40, 0, -50,   -15, 0, 30, -120, 100, 20, -50]
+        q1_target3 = [-10, 20, -40, -110, -40, 0, -40,   -15, 0, 30, -120, 90, 20, -40]
         q1_list3 = Utils.interpolate_joint_trajectory(q1_target3,q_obj1_deg_2, num = num) 
             
-        q1_target4 = [-25, 13, -35, -100, -40, 0, -70,   -12, 10, 30, -100, 110, -10, -70]
+        q1_target4 = [-25, 13, -35, -100, -40, 0, -40,   -12, 10, 30, -100, 90, -10, -40]
         q1_list4 = Utils.interpolate_joint_trajectory(q1_target4, q1_target3, num = 30)
 
-        q1_target5 = [-30, 20, -35, -100, -40, -10, -70,   -12, 10, 30, -80, 110, -10, -70]
+        q1_target5 = [-30, 20, -35, -100, -40, -10, -40,   -12, 10, 30, -80, 90, -10, -40]
         q1_list5 = Utils.interpolate_joint_trajectory(q1_target5,q1_target4, num = num) 
             
             
@@ -224,7 +224,7 @@ def main():
         q2_target1 = [10, 0, 0, -130, 70, 0, 0,   70, 0, 0, -135, 70, 40, 0]
         q2_list1 = Utils.interpolate_joint_trajectory(q2_target1,q1_target8, num = num) 
             
-        q2_target2 = [10, 0, 0, -130, 70, 0, 0,   10, 5, 0, -135, 90, 90, 0]
+        q2_target2 = [10, 0, 0, -130, 70, 0, 0,   10, 5, 0, -135, 90, 75, 0]
         q2_list2 = Utils.interpolate_joint_trajectory(q2_target2, q2_target1, num = num)
 
         print("移动到第二个物体预抓位")
@@ -284,19 +284,19 @@ def main():
         time.sleep(0.5)
 
         #后续动作 - 使用高频轨迹控制器
-        q2_target3 = [-10, 20, -40, -110, -40, 0, -50,   -15, 0, 30, -120, 100, 20, -50]
+        q2_target3 = [-10, 20, -40, -110, -40, 0, -40,   -15, 0, 30, -120, 90, 20, -40]
         q2_list3 = Utils.interpolate_joint_trajectory(q2_target3,q_obj2_deg_2, num = num) 
             
-        q2_target4 = [-25, 13, -35, -100, -40, 0, -70,   -12, 10, 30, -100, 110, -10, -70]
+        q2_target4 = [-25, 13, -35, -100, -40, 0, -40,   -12, 10, 30, -100, 90, -10, -40]
         q2_list4 = Utils.interpolate_joint_trajectory(q2_target4, q2_target3, num = 30)
 
-        q2_target5 = [-30, 20, -35, -100, -40, 0, -70,   -12, 10, 30, -80, 110, -10, -70]
+        q2_target5 = [-30, 20, -35, -100, -40, 0, -40,   -12, 10, 30, -80, 90, -10, -40]
         q2_list5 = Utils.interpolate_joint_trajectory(q2_target5,q2_target4, num = num) 
             
-        q2_target6 = [-50, 20, -10, -80, -90, 0, -70,   60, 0, 10, -100, 110, 10, 0]
+        q2_target6 = [-50, 20, -10, -80, -90, 0, -40,   60, 0, 10, -100, 90, 10, 0]
         q2_list6 = Utils.interpolate_joint_trajectory(q2_target6, q2_target5, num = num)
             
-        q2_target7 = [-10, 10, 15, -70, -150, -50, -60,   70, 0, 0, -135, 70, 40, 0]
+        q2_target7 = [-10, 10, 15, -70, -90, -50, -40,   70, 0, 0, -135, 70, 40, 0]
         q2_list7 = Utils.interpolate_joint_trajectory(q2_target7, q2_target6, num = num)
 
         print("第二个物体翻面操作")
@@ -344,7 +344,7 @@ def main():
         q3_target1 = [30, 0, 0, -140, -90, 0, 0,   70, 0, 0, -135, 70, 40, 0]
         q3_list1 = Utils.interpolate_joint_trajectory(q3_target1,q2_target7, num = num) 
             
-        q3_target2 = [30, 0, 0, -140, -90, 0, 0,   10, 5, 0, -130, 90, 90, 0]
+        q3_target2 = [30, 0, 0, -140, -90, 0, 0,   10, 5, 0, -130, 90, 75, 0]
         q3_list2 = Utils.interpolate_joint_trajectory(q3_target2, q3_target1, num = num)
 
         print("移动到第三个物体预抓位")
@@ -404,10 +404,10 @@ def main():
         gripper_ctrl.control_right_gripper(130)
         time.sleep(0.5)
 
-        q3_target3 = [-50, 20, -75, -100, -90, -60, 0,   -50, -20, 90, -110, 90, 80, 25]
+        q3_target3 = [-50, 20, -75, -100, -90, -60, 0,   -50, -20, 90, -110, 90, 75, 25]
         q3_list3 = Utils.interpolate_joint_trajectory(q3_target3,q_obj3_deg_1, num = num) 
             
-        q3_target4 = [-50, 5, -80, -90, -90, -50, 0,   -50, -15, 90, -110, 90, 80, 25]
+        q3_target4 = [-50, 5, -80, -90, -90, -50, 0,   -50, -15, 90, -110, 90, 75, 25]
         q3_list4 = Utils.interpolate_joint_trajectory(q3_target4, q3_target3, num = num)
 
         traj_ctrl.execute_trajectory(q3_list3, sleep_time=0.02)
@@ -424,13 +424,13 @@ def main():
         gripper_ctrl.control_right_gripper(0)
         time.sleep(0.5)
 
-        q3_target5 = [-50, 20, -80, -90, -90, 0, 0,   10, 5, 0, -130, 90, 90, 0]
+        q3_target5 = [-50, 20, -80, -90, -90, 0, 0,   10, 5, 0, -130, 90, 75, 0]
         q3_list5 = Utils.interpolate_joint_trajectory(q3_target5,q3_target4, num = num) 
             
-        q3_target6 = [-50, 20, -10, -80, -90, 0, -70,   0, 0, 0, -130, 90, 0, 0]
+        q3_target6 = [-50, 20, -10, -80, -90, 0, -40,   0, 0, 0, -130, 90, 0, 0]
         q3_list6 = Utils.interpolate_joint_trajectory(q3_target6, q3_target5, num = num)
 
-        q3_target7 = [-10, 25, 15, -70, -150, -50, -60,   0, 0, 0, -130, 90, 0, 0]
+        q3_target7 = [-10, 25, 15, -70, -90, -50, -40,   0, 0, 0, -130, 90, 0, 0]
         q3_list7 = Utils.interpolate_joint_trajectory(q3_target7, q3_target6, num = num)
 
         traj_ctrl.execute_trajectory(q3_list5, sleep_time=0.02)

@@ -107,10 +107,10 @@ def main():
         q_target1 = [0, 0, 0, -105, -70, 0, 0,   50, 0, 0, -140, 90, 0, 0]
         q_list1 = Utils.interpolate_joint_trajectory(q_target1, num=num) 
         
-        q_target2 = [-10, 15, 25, -100, -120, 0, 0,   50, 0, 0, -120, 90, 0, 0]
+        q_target2 = [-10, 15, 25, -100, -90, 0, 0,   50, 0, 0, -120, 90, 0, 0]
         q_list2 = Utils.interpolate_joint_trajectory(q_target2, q_target1, num=num)
 
-        q_target3 = [-10, 15, 25, -95, -180, 15, -20,   50, 0, 0, -140, 90, 0, 0]
+        q_target3 = [-10, 15, 25, -95, -90, 15, -20,   50, 0, 0, -140, 90, 0, 0]
         q_list3 = Utils.interpolate_joint_trajectory(q_target3, q_target2, num=num)
 
         print("双手移动到初始位置,传送带启动")
@@ -210,7 +210,7 @@ def main():
             print("✅ 第一次成功 ✅")
 
         # 右臂动作
-        q_target7 = [-10, 5, 0, -105, -180, 25, -20,     15, 0, 25, -140, 90, 0, 0]
+        q_target7 = [-10, 5, 0, -105, -90, 25, -20,     15, 0, 25, -140, 90, 0, 0]
         q_list7 = Utils.interpolate_joint_trajectory(q_target7, q_target6, num=num)
 
         q_target8 = [-10, 5, 0, -105, -180, 25, -20,         10, 0, 20, -110, 90, 0, -15]
