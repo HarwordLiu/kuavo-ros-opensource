@@ -359,8 +359,8 @@ class ScoringEvaluator3:
                 result["back_obj1_ori_added"] = True
 
             # 当两个子项都拿到时，标记“中间点完成”
-            # if self.back_obj1_pos_awarded and self.back_obj1_ori_awarded:
-            #     self.back_obj1_awarded = True
+            if self.back_obj1_pos_awarded and self.back_obj1_ori_awarded:
+                self.back_obj1_awarded = True
 
         # —— 反面物体加分 —— #
         if in_region_back_obj2:
@@ -380,8 +380,8 @@ class ScoringEvaluator3:
                 result["back_obj2_ori_added"] = True
 
             # 当两个子项都拿到时，标记“中间点完成”
-            # if self.back_obj2_pos_awarded and self.back_obj2_ori_awarded:
-            #     self.back_obj2_awarded = True
+            if self.back_obj2_pos_awarded and self.back_obj2_ori_awarded:
+                self.back_obj2_awarded = True
 
         # —— 正面物体加分 —— #
         if in_region_front_obj1:
@@ -401,12 +401,12 @@ class ScoringEvaluator3:
                 result["front_obj1_ori_added"] = True
 
             # 当两个子项都拿到时，标记“中间点完成”
-            # if self.front_obj1_pos_awarded and self.front_obj1_ori_awarded:
-            #     self.front_obj1_awarded = True
+            if self.front_obj1_pos_awarded and self.front_obj1_ori_awarded:
+                self.front_obj1_awarded = True
 
 
         # —— 终点成功 —— #
-        if self.front_obj1_pos_awarded and (not self.already_reported_success):
+        if self.front_obj1_awarded and self.back_obj2_awarded and self.back_obj1_awarded and (not self.already_reported_success):
             self.already_reported_success = True
             result["success_triggered"] = True
             result["need_publish_success_true"] = True

@@ -109,7 +109,7 @@ def main():
         
         curr_q1 = robot_state.arm_joint_state().position
         l_pose1, r_pose1 = robot.arm_fk(curr_q1)
-        r_pose_new1 = [item1_pos[0], item1_pos[1], 0.95]
+        r_pose_new1 = [item1_pos[0]+0.01, item1_pos[1], 0.95]
         _, pose1_right1 = Utils.compute_pose(
             robot,
             robot_state,
